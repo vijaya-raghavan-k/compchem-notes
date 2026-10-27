@@ -12,7 +12,7 @@ assets/theme.js                       light/dark toggle
 assets/home.js                        renders the contents page
 assets/lesson.js                      shared lesson tools: plots, contour maps, quizzes, exercises
 lessons/_template.html                starting point for a new lesson
-lessons/*.html                        lessons 1.1–1.11 (mathematical foundations)
+lessons/*.html                        lessons 1.1–1.11 and 2.1–2.7
 ```
 
 ## Publish on GitHub Pages (once)
