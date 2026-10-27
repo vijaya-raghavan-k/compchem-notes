@@ -1,0 +1,97 @@
+[_template.html](https://github.com/user-attachments/files/34026370/_template.html)
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson Title</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>
+  window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Part name</a> · 1.2</div>
+    <h1>Lesson title</h1>
+    <p class="goal">Goal: one sentence describing what I can do after this page.</p>
+  </header>
+
+  <!-- 1. SEE IT: an interactive figure, no heavy math -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Heading</h2>
+    <p>Short intuition. Inline math \(x\), display math:</p>
+    <div class="math">\[ \mathbf v = \begin{pmatrix} 3 \\ 4 \end{pmatrix} \]</div>
+    <div class="panel">
+      <div class="panel-head"><b>Figure title</b><span class="hint">What to drag or change</span></div>
+      <div class="panel-body">
+        <div class="figure"><svg id="fig" viewBox="0 0 480 300" role="img" aria-label="Describe the figure"></svg></div>
+        <div class="readout"><div><span class="label">Readout</span><div class="val" id="out">—</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CALCULATE IT: a small worked example, step by step -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>A worked example by hand</h2>
+    <ol class="work">
+      <li><div>First step.</div></li>
+      <li><div>Second step.</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> One sentence to remember.</div>
+  </section>
+
+  <!-- 3. APPLY IT: where this appears in real calculations (textbook molecules) -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Heading</h2>
+    <p>Connect to optimization, frequencies, transition states, MD …</p>
+  </section>
+
+  <!-- 4. TEST IT: data-answer is the index (0-based) of the correct option.
+       data-fb holds one explanation per option, in order. Keep "I don't know yet" last. -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+    <div class="quiz" data-answer="1">
+      <p class="qtext">Question?</p>
+      <div class="options"><button type="button">A</button><button type="button">B</button><button type="button">C</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Why A is wrong.","Correct, because …","Why C is wrong.","A gentle explanation of the answer."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="../index.html">← Contents</a>
+    <a href="next-lesson.html">Next: title →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script>
+  /* quiz behaviour — keep this block on every lesson page */
+  document.querySelectorAll(".quiz").forEach(function (q) {
+    var answer = +q.dataset.answer, fbEl = q.querySelector(".feedback"), fb = JSON.parse(fbEl.dataset.fb);
+    var opts = q.querySelectorAll(".options button");
+    opts.forEach(function (b, i) { b.addEventListener("click", function () {
+      opts.forEach(function (o) { o.classList.remove("right", "wrong"); });
+      if (i === answer) b.classList.add("right"); else if (i !== opts.length - 1) b.classList.add("wrong");
+      fbEl.textContent = fb[i];
+    }); });
+  });
+  /* lesson-specific interactive code goes here */
+</script>
+</body>
+</html>
