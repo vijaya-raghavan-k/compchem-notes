@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Derivatives and Partial Derivatives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.4</div>
+    <h1>Derivatives and partial derivatives</h1>
+    <p class="goal">Goal: understand a derivative as a local slope, compute it by finite differences and know their errors, and extend the idea to many coordinates with partial derivatives and the chain rule.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Slope from two nearby points</h2>
+    <p>The derivative \(E'(r)\) answers one question: if I change \(r\) a tiny bit, how fast does the energy change? Geometrically it is the slope of the tangent line. A computer cannot take "a tiny bit" literally, so it uses two points a distance \(h\) apart and draws a secant line through them. As \(h\) shrinks, the secant turns into the tangent.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Tangent and secant on a bond potential</b><span class="hint">Drag along the curve</span></div>
+      <div class="panel-body">
+        <div class="seg" id="kind" role="group" aria-label="Finite-difference formula">
+          <button type="button" data-v="fwd" aria-pressed="true">Forward difference</button>
+          <button type="button" data-v="ctr" aria-pressed="false">Central difference</button>
+        </div>
+        <canvas id="curve" class="plot" style="margin-top:12px" role="img" aria-label="Morse energy curve against bond length. A tangent line shows the exact slope at the chosen point, and a dashed secant through two points a distance h apart shows the finite-difference estimate."></canvas>
+        <div class="legend"><span><i class="bg-accent"></i>E(r)</span><span><i class="bg-ink"></i>tangent (exact slope)</span><span><i class="bg-mark"></i>secant (estimate)</span></div>
+        <div class="controls"><div class="range"><div class="top"><label for="h">step h</label><output id="h-v"></output></div><input id="h" type="range" min="-2.3" max="-0.4" step="0.01" value="-0.8"></div></div>
+        <div class="readout" id="out"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Where the curve bends strongly (short bond lengths), the forward secant drifts away from the tangent unless \(h\) is small. The central secant, which looks equally far left and right, stays close even for fairly large \(h\). The next figure shows why, and why \(h\) cannot simply be made tiny.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Two difference formulas, by hand</h2>
+    <p>Take \(E(x) = x^3 - 2x\). Its exact derivative is \(E'(x) = 3x^2 - 2\), so at \(x = 1\) the slope is exactly 1. Now estimate it with \(h = 0.1\).</p>
+    <ol class="work">
+      <li><div>Evaluate the function at the points needed:
+        \[ E(1.1) = 1.331 - 2.2 = -0.869,\quad E(1) = -1,\quad E(0.9) = 0.729 - 1.8 = -1.071 \]</div></li>
+      <li><div><b>Forward difference</b> uses the point and one step ahead:
+        \[ E'(1) \approx \frac{E(1.1) - E(1)}{0.1} = \frac{0.131}{0.1} = 1.31 \qquad (\text{error } 0.31) \]</div></li>
+      <li><div><b>Central difference</b> uses one step on each side:
+        \[ E'(1) \approx \frac{E(1.1) - E(0.9)}{0.2} = \frac{0.202}{0.2} = 1.01 \qquad (\text{error } 0.01) \]</div></li>
+      <li><div>Why 30 times better? Expand \(E(x\pm h)\) in powers of \(h\) (lesson 1.7 does this properly). The forward error is about \(\tfrac{h}{2}E''\), which shrinks like \(h\). In the central formula the \(E''\) terms from both sides cancel, leaving about \(\tfrac{h^2}{6}E'''\), which shrinks like \(h^2\). Check: \(\tfrac{0.1}{2}\cdot 6 = 0.3\) and \(\tfrac{0.01}{6}\cdot 6 = 0.01\).</div></li>
+    </ol>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Partial derivatives</h3>
+    <p style="margin-top:8px">When \(E\) depends on several coordinates, a <b>partial derivative</b> changes one coordinate and freezes all the others. It is the slope of one slice, exactly like the slice plot in lesson 1.3. For \(E(x, y) = x^2 y + 3y^2\):</p>
+    <div class="math">\[ \frac{\partial E}{\partial x} = 2xy, \qquad \frac{\partial E}{\partial y} = x^2 + 6y \qquad\Rightarrow\qquad \text{at } (1, 2):\ \ \frac{\partial E}{\partial x} = 4,\ \ \frac{\partial E}{\partial y} = 13 \]</div>
+    <p>To differentiate with respect to \(x\), treat \(y\) as a constant number, and vice versa.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">The chain rule</h3>
+    <p style="margin-top:8px">A bond energy depends on the distance \(r\), but a program moves Cartesian coordinates. The chain rule connects the two: \(\dfrac{\partial E}{\partial x_1} = \dfrac{dE}{dr}\,\dfrac{\partial r}{\partial x_1}\). For two atoms on the \(x\)-axis, \(r = x_2 - x_1\), so \(\partial r/\partial x_1 = -1\) and \(\partial r/\partial x_2 = +1\). If \(dE/dr = -50\) kcal/mol/Å (bond compressed, energy falls as it lengthens), then</p>
+    <div class="math">\[ \frac{\partial E}{\partial x_1} = (-50)(-1) = +50, \qquad \frac{\partial E}{\partial x_2} = (-50)(+1) = -50\quad \text{kcal/mol/Å} \]</div>
+    <p>Equal and opposite, as they must be: moving both atoms together changes nothing.</p>
+
+    <div class="panel try-block" data-solution="∂E/∂x = 6x + y = 13 and ∂E/∂y = x − 3y² = 2 − 3 = −1 at (2, 1). For f = x² at x = 3: (3.5² − 2.5²)/1 = (12.25 − 6.25)/1 = 6, exactly f′(3) = 6. Central differences are exact for quadratics because there is no third derivative." data-hint="Not yet. For each partial derivative treat the other variable as a fixed number. For the central difference, divide by 2h = 1.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">E(x, y) = 3x² + xy − y³ at (2, 1)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">∂E/∂x</label><input id="t1" data-ans="13" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">∂E/∂y</label><input id="t2" data-ans="-1" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">Central diff of x² at 3, h = 0.5</label><input id="t3" data-ans="6" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Numerical derivatives in real calculations</h2>
+    <p>Programs compute derivatives in two ways. <b>Analytical</b> derivatives are derived on paper and coded; for DFT the full gradient costs roughly as much as one extra energy. <b>Numerical</b> derivatives displace coordinates and difference the results; they need no extra theory but many more calculations.</p>
+    <ul>
+      <li>A numerical gradient by central differences needs 2 energies per coordinate: \(2 \times 3N = 6N\) single points. For 30 atoms that is 180 SCF calculations for one gradient.</li>
+      <li>Numerical frequencies (common when analytical second derivatives are unavailable for a method) difference <em>analytical gradients</em>: displace each of the \(3N\) coordinates forward and back, giving \(6N\) gradient calculations for one Hessian.</li>
+      <li>The step size is a compromise, shown below. Too large, and the formula's built-in (truncation) error dominates. Too small, and the tiny numerical noise in each energy is divided by a tiny \(h\) and blows up.</li>
+    </ul>
+
+    <div class="panel">
+      <div class="panel-head"><b>The step-size trade-off</b><span class="hint">Change the noise in each energy</span></div>
+      <div class="panel-body">
+        <canvas id="err" class="plot" role="img" aria-label="Log-log plot of derivative error against step size for forward and central differences, showing truncation error falling with smaller h and noise error rising, with a best h in between."></canvas>
+        <div class="legend"><span><i class="bg-ok"></i>forward difference</span><span><i class="bg-accent"></i>central difference</span><span><i class="bg-mark"></i>current h</span></div>
+        <div class="controls"><div class="range"><div class="top"><label for="eps">noise in each energy</label><output id="eps-v"></output></div><input id="eps" type="range" min="-9" max="-2" step="0.1" value="-6"></div></div>
+        <p class="hint" style="margin-top:10px" id="errnote"></p>
+      </div>
+    </div>
+    <p style="margin-top:16px">This is why SCF convergence and integration grids are tightened for frequency calculations: they lower the noise floor, which lets the program use a smaller step and get cleaner second derivatives. You will see the consequence in lesson 1.11, as small spurious imaginary frequencies.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Gradient units</h3>
+    <p style="margin-top:8px">1 Hartree/Bohr = 1.88973 Hartree/Å = 51.422 eV/Å = 1185.8 kcal/mol/Å. Always check which one an output and a threshold use before comparing them.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: how analytical gradients and the chain rule work in programs</summary>
+      <div>
+        <p><b>Hellmann–Feynman.</b> For an exact (or fully variational) wavefunction, \(\partial E/\partial x = \langle\Psi|\partial \hat H/\partial x|\Psi\rangle\): the force depends only on how the Hamiltonian changes, not on how the wavefunction changes. This is why analytic gradients are cheap.</p>
+        <p><b>Pulay forces.</b> With atom-centred basis functions (Gaussians or Slater functions), the basis moves with the atoms, so the wavefunction's description changes even if the physics did not. That adds an extra "Pulay" term to the gradient. Plane-wave codes do not have it, because their basis does not move.</p>
+        <p><b>The Wilson B matrix.</b> Optimizers often work in internal coordinates \(\mathbf q\) (bonds, angles, dihedrals). The chain rule written for all coordinates at once is a matrix of partial derivatives \(B_{ij} = \partial q_i/\partial x_j\), and Cartesian and internal gradients are related by \(\mathbf g_x = \mathbf B^{\mathsf T}\mathbf g_q\). The small two-atom example above is one row of this matrix.</p>
+        <p><b>Best step size.</b> If each energy carries noise \(\varepsilon\), the central-difference error is roughly \(\tfrac{h^2}{6}|E'''| + \tfrac{\varepsilon}{h}\). Minimizing over \(h\) gives \(h^\ast \approx (3\varepsilon/|E'''|)^{1/3}\): the optimal step only shrinks as the cube root of the noise. Halving the noise improves the best achievable error by only a factor of about 1.6.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">You halve the step size \(h\). Roughly what happens to the truncation error of the central difference?</p>
+      <div class="options"><button type="button">It drops to about a quarter</button><button type="button">It drops to about a half</button><button type="button">It stays the same</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. The central-difference error scales as h², so halving h divides it by about 4.","That is the behaviour of the forward difference, whose error scales as h.","Truncation error always shrinks with smaller h; only the noise contribution grows.","The leading error terms cancel in the central formula, leaving an error proportional to h². Halving h gives (1/2)² = 1/4 of the error."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">How many single-point energies does a central-difference gradient of a 15-atom molecule require?</p>
+      <div class="options"><button type="button">45</button><button type="button">90</button><button type="button">30</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["45 is the number of coordinates. Central differences need two energies for each.","Correct. 3 × 15 = 45 coordinates, two displaced energies each: 90.","30 would be two per atom, but each atom has three coordinates.","Each of the 3N = 45 coordinates needs one forward and one backward displacement, so 2 × 45 = 90 calculations."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">You use \(h = 10^{-8}\) Å for a numerical DFT gradient, hoping for extreme accuracy. What happens?</p>
+      <div class="options"><button type="button">The result becomes essentially exact</button><button type="button">The truncation error dominates</button><button type="button">Numerical noise in the energies dominates and the result gets worse</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Only in exact arithmetic. DFT energies carry noise from SCF convergence and integration grids.","Truncation error is negligible at such a small h; it is the other error that grows.","Correct. Noise of even 10⁻⁸ Hartree divided by a step of 10⁻⁸ gives an error of order 1, far worse than a sensible step.","Each energy has a small error ε. The difference formula divides by h, so the error from noise grows like ε/h. With a tiny h this term dominates."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="functions-many-variables.html">← 1.3 Functions of many variables</a>
+    <a href="gradients-forces.html">1.5 Gradients and forces →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const De = 120, A = 2.2, RE = 0.958;
+  const E = (r) => De * (1 - Math.exp(-A * (r - RE))) ** 2;
+  const dE = (r) => { const q = Math.exp(-A * (r - RE)); return 2 * De * A * q * (1 - q); };
+  let r0 = 0.86, kind = "fwd", h = Math.pow(10, -0.8);
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), acc: HN.css("--accent"), mark: HN.css("--mark"), ok: HN.css("--ok") });
+
+  const curve = new HN.Plot(document.getElementById("curve"), {
+    xr: [0.7, 1.8], yr: [-5, 60], aspect: 0.6, xlabel: "r / Å", ylabel: "E / kcal·mol⁻¹", xticks: 0.2, yticks: 10,
+    draw(p) {
+      const c = C(), s = dE(r0), e0 = E(r0);
+      p.curve(E, c.acc, 2.6);
+      p.curve((r) => e0 + s * (r - r0), c.ink, 1.6, null, r0 - 0.35, r0 + 0.35);
+      const xa = kind === "fwd" ? r0 : r0 - h, xb = r0 + h, ea = E(xa), eb = E(xb), m = (eb - ea) / (xb - xa);
+      p.curve((r) => ea + m * (r - xa), c.mark, 1.8, [6, 5], xa - 0.3, xb + 0.3);
+      p.dot(xa, ea, c.mark, 4.5); p.dot(xb, eb, c.mark, 4.5);
+      p.dot(r0, e0, c.ink, 5.5);
+    },
+  });
+  curve.drag((x, y, ph) => { if (ph === "up") return; r0 = Math.max(0.78, Math.min(1.6, x)); upd(); });
+
+  const out = document.getElementById("out");
+  function est() { return kind === "fwd" ? (E(r0 + h) - E(r0)) / h : (E(r0 + h) - E(r0 - h)) / (2 * h); }
+  function upd() {
+    const ex = dE(r0), es = est();
+    out.innerHTML = '<div><span class="label">Exact slope E′(r)</span><div class="val">' + HN.fmt(ex, 2) + '</div><div class="hint">kcal/mol/Å at r = ' + HN.fmt(r0, 3) + ' Å</div></div>' +
+      '<div><span class="label">' + (kind === "fwd" ? "Forward" : "Central") + ' estimate</span><div class="val">' + HN.fmt(es, 2) + '</div></div>' +
+      '<div><span class="label">Error</span><div class="val">' + HN.fmt(es - ex, 3) + '</div><div class="hint">' + HN.fmt(100 * Math.abs(es - ex) / Math.max(1e-9, Math.abs(ex)), 1) + '% of the slope</div></div>';
+    curve.render(); errp.render();
+  }
+  HN.seg(document.getElementById("kind"), (v) => { kind = v; upd(); });
+  HN.range("h", (v) => { h = Math.pow(10, v); upd(); }, (v) => HN.fmt(Math.pow(10, v), 3) + " Å");
+
+  /* error vs step size (log10 axes) */
+  let eps = 1e-6;
+  const errAt = (hh, k) => {
+    const trunc = k === "fwd" ? Math.abs((E(r0 + hh) - E(r0)) / hh - dE(r0)) : Math.abs((E(r0 + hh) - E(r0 - hh)) / (2 * hh) - dE(r0));
+    const noise = k === "fwd" ? 2 * eps / hh : eps / hh;
+    return trunc + noise;
+  };
+  const errp = new HN.Plot(document.getElementById("err"), {
+    xr: [-7, 0], yr: [-8, 3], aspect: 0.58, xlabel: "log₁₀ h", ylabel: "log₁₀ error", xticks: 1, yticks: 2,
+    draw(p) {
+      const c = C();
+      p.curve((lx) => Math.log10(errAt(Math.pow(10, lx), "fwd")), c.ok, 2.2);
+      p.curve((lx) => Math.log10(errAt(Math.pow(10, lx), "ctr")), c.acc, 2.4);
+      const lh = Math.log10(h);
+      p.seg(lh, -8, lh, 3, c.mark, 1.6, [4, 4]);
+      // best central h
+      let best = -7, bv = Infinity;
+      for (let lx = -7; lx <= 0; lx += 0.01) { const v = errAt(Math.pow(10, lx), "ctr"); if (v < bv) { bv = v; best = lx; } }
+      p.dot(best, Math.log10(bv), c.acc, 5, true);
+      p.text("best central h", best, Math.log10(bv), c.ink2, { dx: 8, dy: 14, size: 10.5 });
+      document.getElementById("errnote").textContent = "With energy noise " + eps.toExponential(0).replace("-", "−") + " kcal/mol, the best central step here is about " + Math.pow(10, best).toExponential(1).replace("-", "−") + " Å, giving an error near " + bv.toExponential(1).replace("-", "−") + ". Left of the minimum, noise dominates (slope −1); right of it, truncation dominates.";
+    },
+  });
+  HN.range("eps", (v) => { eps = Math.pow(10, v); errp.render(); }, (v) => "10^" + HN.fmt(v, 1) + " kcal/mol");
+  document.getElementById("eps").dispatchEvent(new Event("input"));
+  document.getElementById("h").dispatchEvent(new Event("input"));
+})();
+</script>
+</body>
+</html>

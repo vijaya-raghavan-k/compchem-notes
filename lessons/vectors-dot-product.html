@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vector Length and the Dot Product</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.2</div>
+    <h1>Vector length, addition and the dot product</h1>
+    <p class="goal">Goal: combine displacements, measure their size, and measure how well two directions agree. These three operations sit inside every convergence test, bond angle and mode analysis.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Two arrows from the origin</h2>
+    <p>In lesson 1.1 a vector was one move of one atom. Here we hold two vectors, \(\mathbf a\) and \(\mathbf b\), and ask two questions: what happens if we make one move after the other, and how similar are their directions?</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Vectors a and b</b><span class="hint">Drag either arrow tip</span></div>
+      <div class="panel-body">
+        <div class="seg" id="mode" role="group" aria-label="What to show">
+          <button type="button" data-v="sum" aria-pressed="true">Addition</button>
+          <button type="button" data-v="dot" aria-pressed="false">Dot product</button>
+        </div>
+        <canvas id="fig" class="plot" style="margin-top:12px" role="img" aria-label="Two vectors a and b drawn from the origin. In addition mode the sum a + b is shown head to tail. In dot product mode the angle between them and the projection of b onto a are shown."></canvas>
+        <div class="legend" id="legend"></div>
+        <div class="readout" id="readout"></div>
+        <p class="hint" id="sentence" style="margin-top:12px"></p>
+        <div class="btn-row"><button class="btn" id="reset" type="button">Reset</button><button class="btn" id="perp" type="button">Make b perpendicular to a</button></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Two things to try. In addition mode, notice that \(|\mathbf a + \mathbf b|\) is never longer than \(|\mathbf a| + |\mathbf b|\): equal only when the arrows point the same way. In dot product mode, rotate \(\mathbf b\) around \(\mathbf a\) and watch the sign of \(\mathbf a\cdot\mathbf b\): positive when they lean together, zero at 90°, negative when they lean apart.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>A worked example by hand</h2>
+    <p>Take \(\mathbf a = (3,\ 1)\) and \(\mathbf b = (1,\ 2)\).</p>
+    <ol class="work">
+      <li><div><b>Addition</b> works component by component, exactly like subtraction in lesson 1.1:
+        \[ \mathbf a + \mathbf b = \begin{pmatrix} 3+1 \\ 1+2 \end{pmatrix} = \begin{pmatrix} 4 \\ 3 \end{pmatrix} \]</div></li>
+      <li><div><b>Length</b> (also called the norm or magnitude) comes from Pythagoras:
+        \[ |\mathbf a| = \sqrt{3^2+1^2} = \sqrt{10} \approx 3.162, \qquad |\mathbf b| = \sqrt{1^2+2^2} = \sqrt{5} \approx 2.236 \]</div></li>
+      <li><div><b>Dot product</b>: multiply matching components and add.
+        \[ \mathbf a\cdot\mathbf b = a_x b_x + a_y b_y = 3\cdot 1 + 1\cdot 2 = 5 \]
+        The result is a single number, not a vector.</div></li>
+      <li><div><b>Angle.</b> The same dot product also equals \(|\mathbf a|\,|\mathbf b|\cos\theta\). Solving for the angle:
+        \[ \cos\theta = \frac{\mathbf a\cdot\mathbf b}{|\mathbf a|\,|\mathbf b|} = \frac{5}{\sqrt{10}\,\sqrt{5}} = \frac{5}{\sqrt{50}} = 0.7071 \quad\Rightarrow\quad \theta = 45^\circ \]</div></li>
+      <li><div><b>Projection.</b> How far does \(\mathbf b\) reach along the direction of \(\mathbf a\)? Divide \(\mathbf a\) by its length to get the unit vector \(\hat{\mathbf a}\), then dot:
+        \[ \hat{\mathbf a} = \frac{\mathbf a}{|\mathbf a|} = \begin{pmatrix} 0.949 \\ 0.316 \end{pmatrix}, \qquad \hat{\mathbf a}\cdot\mathbf b = \frac{5}{\sqrt{10}} \approx 1.581 \]</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> The length of a vector is the square root of its dot product with itself: \(|\mathbf a| = \sqrt{\mathbf a\cdot\mathbf a}\). Lengths, angles and projections all come from one operation.</div>
+
+    <div class="panel try-block" data-solution="a·b = 2·3 + 2·(−3) = 0, so cos θ = 0 and θ = 90°. a + b = (5, −1), so |a + b| = √26 ≈ 5.10." data-hint="Not yet. Multiply matching components and add for the dot product; for the length of a + b, add first, then use Pythagoras.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">a = (2, 2), b = (3, −3)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">a · b</label><input id="t1" data-ans="0" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">θ in degrees</label><input id="t2" data-ans="90" data-tol="0.5" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">|a + b|</label><input id="t3" data-ans="5.099" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Angles, convergence tests and mode overlaps</h2>
+
+    <h3 style="font-size:var(--s-1);margin-top:8px">A bond angle from Cartesian coordinates</h3>
+    <p style="margin-top:8px">A program stores water as three positions (Å). Take</p>
+    <div class="math">\[ \mathbf r_\mathrm{O} = \begin{pmatrix} 0 \\ 0 \\ 0.117 \end{pmatrix},\quad \mathbf r_{\mathrm{H}_1} = \begin{pmatrix} 0 \\ 0.757 \\ -0.469 \end{pmatrix},\quad \mathbf r_{\mathrm{H}_2} = \begin{pmatrix} 0 \\ -0.757 \\ -0.469 \end{pmatrix} \]</div>
+    <p>The two bond vectors are displacements from oxygen: \(\mathbf u = \mathbf r_{\mathrm H_1} - \mathbf r_\mathrm O = (0,\ 0.757,\ -0.586)\) and \(\mathbf v = (0,\ -0.757,\ -0.586)\). Then</p>
+    <div class="math">\[ \cos\theta = \frac{\mathbf u\cdot\mathbf v}{|\mathbf u|\,|\mathbf v|} = \frac{-0.5730 + 0.3434}{0.9573^2} = \frac{-0.2297}{0.9164} = -0.2506 \quad\Rightarrow\quad \theta = 104.5^\circ \]</div>
+    <p>This is how every visualizer and every internal-coordinate routine computes a bond angle: two displacement vectors and one dot product.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">The two numbers in every optimization output</h3>
+    <p style="margin-top:8px">The gradient (lesson 1.5) is a vector \(\mathbf g\) with \(3N\) components. A program cannot test a whole vector against a threshold, so it reduces it to numbers. Two are standard:</p>
+    <div class="math">\[ \text{max gradient} = \max_i |g_i|, \qquad \text{RMS gradient} = \sqrt{\frac{1}{3N}\sum_{i=1}^{3N} g_i^2} = \frac{|\mathbf g|}{\sqrt{3N}} \]</div>
+    <div class="panel">
+      <div class="panel-head"><b>Two norms of one gradient</b><span class="hint">Edit any component (Hartree/Å)</span></div>
+      <div class="panel-body">
+        <div class="scroll"><table class="data" id="gtab"></table></div>
+        <div class="readout" id="gout"></div>
+        <p class="hint" style="margin-top:10px">Try making one component large while keeping the rest small. The max norm reacts strongly; the RMS norm averages it away. This is why programs require both: RMS catches a generally poor geometry, max catches one atom that is still far off.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Overlap between two displacement patterns</h3>
+    <p style="margin-top:8px">The normalized dot product of two \(3N\)-component vectors, \(\cos\theta = \mathbf a\cdot\mathbf b / (|\mathbf a||\mathbf b|)\), measures how similar two atomic motions are. A value near ±1 means the same motion (the sign only reflects which way the arrows were drawn), near 0 means unrelated motions. It is used to check whether a transition state's imaginary mode really moves the atoms the reaction needs, and to follow the "same" vibrational mode across related molecules.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: inner products, norms and metrics</summary>
+      <div>
+        <p><b>Cauchy–Schwarz.</b> For any vectors, \(|\mathbf a\cdot\mathbf b| \le |\mathbf a|\,|\mathbf b|\). This is why \(\cos\theta\) always lies between −1 and 1, and why the angle formula works in 30 or 3000 dimensions where no picture exists. The triangle inequality \(|\mathbf a+\mathbf b|\le|\mathbf a|+|\mathbf b|\) follows from it.</p>
+        <p><b>Different norms answer different questions.</b> The ordinary length is the 2-norm \(\lVert\mathbf g\rVert_2\). The max gradient is the ∞-norm \(\lVert\mathbf g\rVert_\infty\). They are related by \(\lVert\mathbf g\rVert_\infty \le \lVert\mathbf g\rVert_2 \le \sqrt{3N}\,\lVert\mathbf g\rVert_\infty\), so for large molecules the same ∞-norm threshold allows a much larger total gradient.</p>
+        <p><b>Weighted inner products.</b> Nothing forces every component to count equally. In vibrational analysis and IRC the natural choice is the mass-weighted inner product
+        \[ \langle \mathbf a, \mathbf b\rangle_M = \sum_{i=1}^{3N} m_i\, a_i b_i \]
+        Normal modes are orthogonal in this metric, not in the plain Cartesian one. Lesson 1.10 shows why.</p>
+        <p><b>Orthonormal bases.</b> Unit vectors that are mutually perpendicular form a basis in which every vector's components are simply dot products: \(a_k = \hat{\mathbf e}_k\cdot\mathbf a\). Programs build such bases (by Gram–Schmidt) for the three translations and three rotations of a molecule, then remove those components from a gradient or Hessian. That is the projection step you see mentioned in frequency outputs.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">Two nonzero displacement vectors have \(\mathbf a\cdot\mathbf b = 0\). What does that tell you?</p>
+      <div class="options"><button type="button">They are perpendicular</button><button type="button">They are parallel</button><button type="button">They point in opposite directions</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. a·b = |a||b|cos θ, and with nonzero lengths this is zero only when cos θ = 0, so θ = 90°.","Parallel vectors give the largest possible dot product, |a||b|, not zero.","Opposite vectors give the most negative dot product, −|a||b|.","Use a·b = |a||b| cos θ. If neither length is zero, the product can only vanish when cos θ = 0, which means θ = 90°."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">A 20-atom optimization reports max gradient 0.0009 and RMS gradient 0.0006 (Hartree/Å). The thresholds are 0.001 and 0.0005. Is it converged?</p>
+      <div class="options"><button type="button">Yes, the max gradient is below its threshold</button><button type="button">No, the RMS gradient is still above its threshold</button><button type="button">Yes, because 0.0006 is close to 0.0005</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Passing one criterion is not enough. Programs require every listed criterion to pass, and the RMS value is above its limit.","Correct. Each criterion tests a different norm of the same vector; all must pass.","Thresholds are hard limits. 0.0006 is 20% above 0.0005.","The two numbers measure the same gradient in two ways: the largest single component, and the average size. A geometry counts as converged only when both are below their limits; here RMS is not."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">The normalized overlap between a transition state's imaginary mode and the expected H-transfer direction is −0.95. What does this mean?</p>
+      <div class="options"><button type="button">The mode is essentially the expected motion</button><button type="button">The mode moves atoms the wrong way, so the TS is wrong</button><button type="button">The two motions are nearly unrelated</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. |cos θ| = 0.95 means nearly parallel. A mode vector and its negative describe the same vibration, since the atoms oscillate both ways.","A vibration runs in both directions during one period, so a mode and its negative are the same mode. Only the magnitude of the overlap matters.","Unrelated motions give an overlap near 0, not near ±1.","Overlap = cos θ between two 3N-dimensional motions. Its size tells you how similar they are; ±1 means identical up to the sign, which for a vibration carries no meaning."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="coordinates-displacement.html">← 1.1 Coordinates and displacement vectors</a>
+    <a href="functions-many-variables.html">1.3 Functions of many variables →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const A0 = [3, 1], B0 = [1, 2];
+  let a = A0.slice(), b = B0.slice(), mode = "sum", grab = null;
+  const C = () => ({ ink: HN.css("--ink"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), ok: HN.css("--ok"), rule: HN.css("--rule") });
+  const dot = (u, v) => u[0] * v[0] + u[1] * v[1], len = (u) => Math.hypot(u[0], u[1]);
+
+  const plot = new HN.Plot(document.getElementById("fig"), {
+    xr: [-4.5, 4.5], yr: [-3, 3], equal: true, aspect: 0.72, xticks: 1, yticks: 1,
+    draw(p) {
+      const c = C(), s = [a[0] + b[0], a[1] + b[1]];
+      if (mode === "sum") {
+        p.seg(a[0], a[1], s[0], s[1], c.ok, 2, [5, 5]);
+        p.seg(b[0], b[1], s[0], s[1], c.acc, 1.5, [5, 5]);
+        p.arrow(0, 0, s[0], s[1], c.mark, 3);
+        p.text("a + b", s[0], s[1], c.mark, { dx: 8, dy: -10 });
+      } else {
+        const la = len(a);
+        if (la > 1e-9) {
+          const t = dot(a, b) / (la * la), f = [t * a[0], t * a[1]];
+          p.seg(-a[0] * 10, -a[1] * 10, a[0] * 10, a[1] * 10, c.rule, 1);
+          p.seg(b[0], b[1], f[0], f[1], c.ink3, 1.5, [4, 4]);
+          p.seg(0, 0, f[0], f[1], c.mark, 6);
+          p.dot(f[0], f[1], c.mark, 3.5);
+          // angle arc
+          const t1 = Math.atan2(a[1], a[0]), t2 = Math.atan2(b[1], b[0]);
+          let d = t2 - t1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+          const g = p.ctx, R = 26 * p.dpr; g.strokeStyle = c.ink; g.lineWidth = 1.5 * p.dpr; g.beginPath();
+          g.arc(p.X(0), p.Y(0), R, -t1, -(t1 + d), d > 0); g.stroke();
+          const tm = t1 + d / 2; p.text("θ", 0, 0, c.ink, { dx: Math.cos(tm) * 40, dy: -Math.sin(tm) * 40, align: "center" });
+        }
+      }
+      p.arrow(0, 0, a[0], a[1], c.acc, 3);
+      p.arrow(0, 0, b[0], b[1], c.ok, 3);
+      p.text("a", a[0], a[1], c.acc, { dx: 8, dy: -8 });
+      p.text("b", b[0], b[1], c.ok, { dx: 8, dy: -8 });
+      p.dot(0, 0, c.ink, 3);
+    },
+  });
+
+  const snap = (v) => Math.round(v * 2) / 2;
+  plot.drag((x, y, ph) => {
+    if (ph === "up") { grab = null; return; }
+    if (ph === "down") {
+      const da = Math.hypot(x - a[0], y - a[1]), db = Math.hypot(x - b[0], y - b[1]);
+      grab = da <= db ? "a" : "b";
+    }
+    const v = [Math.max(-4, Math.min(4, snap(x))), Math.max(-2.5, Math.min(2.5, snap(y)))];
+    if (grab === "a") a = v; else b = v;
+    update();
+  });
+
+  const legend = document.getElementById("legend"), out = document.getElementById("readout"), sentence = document.getElementById("sentence");
+  function vtex(name, v) { return "\\(" + name + " = \\begin{pmatrix} " + HN.tex(v[0]) + " \\\\ " + HN.tex(v[1]) + " \\end{pmatrix}\\)"; }
+  function update() {
+    const la = len(a), lb = len(b), s = [a[0] + b[0], a[1] + b[1]], ab = dot(a, b);
+    if (mode === "sum") {
+      legend.innerHTML = '<span><i class="bg-accent"></i>a</span><span><i class="bg-ok"></i>b</span><span><i class="bg-mark"></i>a + b</span>';
+      out.innerHTML = '<div><span class="label">Sum</span><div class="mjx" id="o1"></div></div>' +
+        '<div><span class="label">Lengths</span><div class="val">|a| = ' + HN.fmt(la) + '<br>|b| = ' + HN.fmt(lb) + '<br>|a + b| = ' + HN.fmt(len(s)) + '</div></div>';
+      HN.setTex(document.getElementById("o1"), vtex("\\mathbf a + \\mathbf b", s));
+      sentence.textContent = "Triangle inequality: |a + b| = " + HN.fmt(len(s)) + " ≤ |a| + |b| = " + HN.fmt(la + lb) + (Math.abs(len(s) - la - lb) < 1e-9 ? " (equal: the arrows point the same way)." : ".");
+    } else {
+      const cos = la && lb ? ab / (la * lb) : NaN, th = Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
+      legend.innerHTML = '<span><i class="bg-accent"></i>a</span><span><i class="bg-ok"></i>b</span><span><i class="bg-mark"></i>projection of b on a</span>';
+      out.innerHTML = '<div><span class="label">Dot product</span><div class="val">' + HN.trim(a[0]) + "·" + HN.trim(b[0]) + " + " + HN.trim(a[1]) + "·" + HN.trim(b[1]) + "<br>= " + HN.trim(ab, 2) + '</div></div>' +
+        '<div><span class="label">Angle</span><div class="val">cos θ = ' + HN.fmt(cos, 3) + '<br>θ = ' + HN.fmt(th, 1) + '°</div></div>' +
+        '<div><span class="label">Projection of b on a</span><div class="val">' + (la ? HN.fmt(ab / la, 3) : "—") + '</div></div>';
+      sentence.textContent = !la || !lb ? "A zero-length vector has no direction, so the angle is undefined."
+        : Math.abs(ab) < 1e-9 ? "a · b = 0: the vectors are perpendicular, and b has no component along a."
+        : ab > 0 ? "a · b > 0: the angle is less than 90°, so b has a positive component along a." : "a · b < 0: the angle is more than 90°, so b points partly against a.";
+    }
+    plot.render();
+  }
+  HN.seg(document.getElementById("mode"), (v) => { mode = v; update(); });
+  document.getElementById("reset").addEventListener("click", () => { a = A0.slice(); b = B0.slice(); update(); });
+  document.getElementById("perp").addEventListener("click", () => { b = [-a[1], a[0]]; update(); });
+  update();
+
+  /* gradient norms table */
+  const g = [0.003, -0.001, 0.000, 0.002, 0.004, -0.002];
+  const labels = ["x₁", "y₁", "z₁", "x₂", "y₂", "z₂"];
+  const tab = document.getElementById("gtab"), gout = document.getElementById("gout");
+  tab.innerHTML = "<thead><tr><th>Component</th>" + labels.map((l) => "<th>g(" + l + ")</th>").join("") + "</tr></thead><tbody><tr><td>value</td>" +
+    g.map((v, i) => '<td><input aria-label="g ' + labels[i] + '" data-i="' + i + '" value="' + v.toFixed(3) + '" inputmode="decimal" style="width:5.2rem;font:inherit;padding:5px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:right"></td>').join("") + "</tr></tbody>";
+  function gupd() {
+    const n = Math.hypot(...g), mx = Math.max(...g.map(Math.abs)), rms = n / Math.sqrt(g.length);
+    gout.innerHTML = '<div><span class="label">Length |g|</span><div class="val">' + HN.fmt(n, 5) + '</div></div>' +
+      '<div><span class="label">RMS gradient</span><div class="val">' + HN.fmt(rms, 5) + '</div><div class="hint">|g| / √6</div></div>' +
+      '<div><span class="label">Max gradient</span><div class="val">' + HN.fmt(mx, 5) + '</div><div class="hint">largest |gᵢ|</div></div>';
+  }
+  tab.querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { const v = parseFloat(inp.value.replace("−", "-")); g[+inp.dataset.i] = isFinite(v) ? v : 0; gupd(); }));
+  gupd();
+})();
+</script>
+</body>
+</html>

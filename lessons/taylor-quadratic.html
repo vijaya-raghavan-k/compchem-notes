@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taylor Expansion and the Quadratic Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.7</div>
+    <h1>Taylor expansion and the quadratic model</h1>
+    <p class="goal">Goal: approximate a surface near one point using its value, gradient and Hessian; understand the harmonic approximation; and derive the Newton step that optimizers are built on, including how it fails.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Polynomials that hug the curve</h2>
+    <p>At one point you know the energy, the slope and the curvature. A Taylor expansion uses exactly these numbers to build a polynomial that matches the curve at that point. A line matches value and slope; a parabola also matches curvature; higher orders match more. Near the point the match is excellent. Far away, it can be very wrong.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Taylor approximations of a bond potential</b><span class="hint">Drag the expansion point</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="A Morse bond curve with first, second, third and fourth order Taylor polynomials drawn around a chosen expansion point."></canvas>
+        <div class="legend">
+          <label><input type="checkbox" data-o="1" checked> <i class="bg-ink3"></i>1st order</label>
+          <label><input type="checkbox" data-o="2" checked> <i class="bg-accent"></i>2nd order</label>
+          <label><input type="checkbox" data-o="3"> <i class="bg-ok"></i>3rd order</label>
+          <label><input type="checkbox" data-o="4"> <i class="bg-mark"></i>4th order</label>
+        </div>
+        <div class="readout" id="o1"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Put the expansion point at the minimum (0.958 Å). The linear term disappears because the slope is zero, and the 2nd-order curve is the familiar harmonic parabola. It matches well near the bottom but rises far too steeply on the stretching side, where the real bond levels off toward dissociation. The 3rd and 4th orders repair much of this. That difference is <b>anharmonicity</b>.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>From the expansion to the Newton step</h2>
+    <p>In one variable, the Taylor series around \(x_0\) with \(\Delta = x - x_0\) is</p>
+    <div class="math">\[ E(x_0 + \Delta) = E(x_0) + E'(x_0)\,\Delta + \tfrac{1}{2}E''(x_0)\,\Delta^2 + \tfrac{1}{6}E'''(x_0)\,\Delta^3 + \dots \]</div>
+    <ol class="work">
+      <li><div>Keep terms up to \(\Delta^2\): this is the <b>quadratic model</b>. Find where its slope is zero:
+        \[ \frac{d}{d\Delta}\left(E_0 + E'\Delta + \tfrac12 E''\Delta^2\right) = E' + E''\Delta = 0 \quad\Rightarrow\quad \Delta = -\frac{E'}{E''} \]
+        This is the <b>Newton step</b>: jump to the stationary point of the local parabola.</div></li>
+      <li><div>Apply it to \(E(x) = x^4 - 2x^2\) (true minimum at \(x = 1\)), starting at \(x = 1.5\). There \(E' = 4x^3 - 4x = 7.5\) and \(E'' = 12x^2 - 4 = 23\):
+        \[ x_1 = 1.5 - \frac{7.5}{23} = 1.1739 \]</div></li>
+      <li><div>Repeat from each new point:
+        <div class="scroll"><table class="data">
+          <thead><tr><th>Iteration</th><th>x</th><th>E′</th><th>E″</th><th>error x − 1</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>1.500000</td><td>7.50000</td><td>23.000</td><td>5.0 × 10⁻¹</td></tr>
+            <tr><td>1</td><td>1.173913</td><td>1.77529</td><td>12.537</td><td>1.7 × 10⁻¹</td></tr>
+            <tr><td>2</td><td>1.032307</td><td>0.27112</td><td>8.788</td><td>3.2 × 10⁻²</td></tr>
+            <tr><td>3</td><td>1.001456</td><td>0.01167</td><td>8.035</td><td>1.5 × 10⁻³</td></tr>
+            <tr><td>4</td><td>1.000003</td><td>0.00003</td><td>8.000</td><td>3.2 × 10⁻⁶</td></tr>
+          </tbody>
+        </table></div></div></li>
+      <li><div>Look at the error column: once close, it roughly squares each step (\(10^{-2} \to 10^{-3} \to 10^{-6}\)), so the number of correct digits doubles. This is <b>quadratic convergence</b>, and it is why Newton-type methods finish in a handful of steps when started near a minimum.</div></li>
+    </ol>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">The same model in many dimensions</h3>
+    <p style="margin-top:8px">With a displacement vector \(\Delta\mathbf x\), gradient \(\mathbf g\) and Hessian matrix \(\mathbf H\) (lesson 1.8), the quadratic model and its stationary point are</p>
+    <div class="math">\[ E(\mathbf x_0 + \Delta\mathbf x) \approx E_0 + \mathbf g^{\mathsf T}\Delta\mathbf x + \tfrac12\,\Delta\mathbf x^{\mathsf T}\mathbf H\,\Delta\mathbf x, \qquad \Delta\mathbf x_\text{Newton} = -\mathbf H^{-1}\mathbf g \]</div>
+    <p>At a minimum \(\mathbf g = \mathbf 0\), and what remains, \(E \approx E_0 + \tfrac12\Delta\mathbf x^{\mathsf T}\mathbf H\Delta\mathbf x\), is the <b>harmonic approximation</b>. Every standard frequency calculation is built on this one line.</p>
+    <div class="note"><b>Key idea.</b> Gradient plus Hessian give a local quadratic model. Optimizers jump to its stationary point; frequency calculations read its curvature.</div>
+
+    <div class="panel try-block" data-solution="For E = x² − 4x + 7 at x = 0: E′ = −4, E″ = 2, so x₁ = 0 − (−4)/2 = 2, exactly the minimum, because the model is exact for a parabola. For x⁴ − 2x² at x = 2: E′ = 24, E″ = 44, so x₁ = 2 − 24/44 ≈ 1.455." data-hint="Not yet. New x = old x − E′/E″. Compute both derivatives at the starting point first.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">One Newton step each</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">x² − 4x + 7, from x = 0</label><input id="t1" data-ans="2" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">x⁴ − 2x², from x = 2</label><input id="t2" data-ans="1.455" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Optimizers, trust radii and the harmonic approximation</h2>
+    <p>Run Newton's method yourself on the double well from lesson 1.6. Each step draws the local parabola and jumps to its stationary point.</p>
+    <div class="panel">
+      <div class="panel-head"><b>Newton's method on a double well</b><span class="hint">Tap to choose a start, then step</span></div>
+      <div class="panel-body">
+        <canvas id="c2" class="plot" role="img" aria-label="Double-well curve with the quadratic model at the current point and an arrow to the model's stationary point. A history of points shows where Newton's method goes."></canvas>
+        <div class="btn-row"><button class="btn" id="step" type="button">Take Newton step</button><button class="btn" id="reset" type="button">Reset</button></div>
+        <div class="scroll"><table class="data" id="hist"></table></div>
+        <p class="hint" id="nnote" style="margin-top:10px"></p>
+      </div>
+    </div>
+    <p style="margin-top:16px">Start near \(x = 0.3\) and press step: Newton runs uphill to the barrier top. The model there is an upside-down parabola, and its stationary point is a maximum. Pure Newton converges to the nearest stationary point of <em>any</em> kind. Real optimizers therefore modify the step:</p>
+    <ul>
+      <li><b>Trust radius.</b> Never step farther than a distance where the model is trusted. After each step, compare the predicted energy change with the actual one; if they disagree, shrink the radius, otherwise grow it.</li>
+      <li><b>Curvature control.</b> For a minimum search the model's curvature must be positive in every direction. Methods such as rational function optimization (RFO) shift the step so it always goes downhill. Transition-state searches do the opposite on purpose: uphill along one direction, downhill along all others (lesson 2.4).</li>
+      <li><b>Approximate Hessians.</b> Computing \(\mathbf H\) exactly at every step is expensive, so quasi-Newton methods (BFGS) build it up from the gradients they already have (lesson 2.1).</li>
+    </ul>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Why frequencies need an optimized geometry</h3>
+    <p style="margin-top:8px">The harmonic analysis assumes the linear term \(\mathbf g^{\mathsf T}\Delta\mathbf x\) is zero. At a geometry that is not a stationary point of the <em>same</em> method and basis set, it is not, and the resulting frequencies are not meaningful (the low ones are affected most). This is why a geometry optimized at one level should be re-optimized before computing frequencies at another.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Harmonic versus real frequencies</h3>
+    <p style="margin-top:8px">Computed harmonic frequencies are usually somewhat higher than measured fundamentals, partly because of anharmonicity (the 3rd and 4th-order terms above) and partly because of method error. Empirical scaling factors (often 0.94–0.99 depending on functional and basis) correct for both on average. Explicit anharmonic methods such as VPT2 use third and fourth derivatives instead.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: convergence rate, error terms and the trust ratio</summary>
+      <div>
+        <p><b>Why convergence is quadratic.</b> Write \(e_k = x_k - x^\ast\). Expanding \(E'\) around the minimum in the Newton formula gives \(e_{k+1} \approx \dfrac{E'''(x^\ast)}{2E''(x^\ast)}\,e_k^2\). For \(x^4 - 2x^2\): \(E''' = 24\), \(E'' = 8\), so \(e_{k+1} \approx 1.5\,e_k^2\). Check against the table: \(1.5 \times (0.0323)^2 = 0.00157\), close to the observed 0.00146.</p>
+        <p><b>The remainder term.</b> Truncating after \(\Delta^2\) leaves an error of order \(\tfrac16 E'''\Delta^3\). For a Morse bond \(E''' = -6D_ea^3\) at the minimum, so the harmonic model underestimates the energy on compression and overestimates it on stretching by about \(D_ea^3\Delta^3\).</p>
+        <p><b>The trust ratio.</b> Optimizers compute \(\rho = \Delta E_\text{actual}/\Delta E_\text{predicted}\). Values near 1 mean the quadratic model is reliable and the trust radius can grow; small or negative values mean the step was too ambitious. This single number is what controls the step-size logic in most modern geometry optimizers.</p>
+        <p><b>Cost.</b> Inverting or factorizing an \(n\times n\) Hessian costs order \(n^3\) operations, trivial for \(n = 3N\) of a few hundred. The expensive part is computing \(\mathbf H\) in the first place: an analytic DFT Hessian costs many times a gradient, and a numerical one costs \(6N\) gradients (lesson 1.4).</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">You start a pure Newton optimization at a point where the curvature \(E''\) is negative. What does the first step do?</p>
+      <div class="options"><button type="button">It goes downhill, toward the nearest minimum</button><button type="button">It heads toward a stationary point with negative curvature, such as a maximum</button><button type="button">It cannot be computed</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["The quadratic model is an upside-down parabola; its only stationary point is its top.","Correct. Newton jumps to the stationary point of the local model, which here is a maximum. Minimizers must correct the curvature.","It can be computed as long as E″ is not zero; the problem is where it goes.","With E″ &lt; 0 the local parabola opens downward, so its stationary point is a maximum. Newton jumps there, which is why practical optimizers modify the step."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">Why must a geometry be a stationary point (at the same level of theory) before a harmonic frequency calculation?</p>
+      <div class="options"><button type="button">The harmonic analysis assumes the gradient term is zero</button><button type="button">The Hessian cannot be computed elsewhere</button><button type="button">Frequencies are always zero at other points</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Away from a stationary point the linear term gᵀΔx remains, and the quadratic-only analysis no longer describes vibrations about equilibrium.","Second derivatives exist at any geometry; the problem is how they are interpreted.","They are not zero; they are simply not meaningful vibrational frequencies.","The expansion E ≈ E₀ + gᵀΔx + ½ΔxᵀHΔx reduces to the harmonic form only when g = 0. At other points the linear term distorts the analysis."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">An optimizer is converging quadratically. The error was \(10^{-2}\) at one step. Roughly what will it be at the next?</p>
+      <div class="options"><button type="button">\(5\times10^{-3}\)</button><button type="button">\(10^{-3}\)</button><button type="button">\(10^{-4}\)</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Halving the error each step is linear convergence, typical of steepest descent.","A factor of 10 per step is still linear convergence.","Correct. Quadratic convergence means e_next ≈ C·e², so (10⁻²)² = 10⁻⁴ times a constant of order 1.","Quadratic convergence means the new error is about the square of the old one: (10⁻²)² = 10⁻⁴, so the number of correct digits doubles."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="curvature.html">← 1.6 Second derivatives and curvature</a>
+    <a href="matrices.html">1.8 Matrices →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), ok: HN.css("--ok") });
+  /* ---------- Morse and its derivatives ---------- */
+  const De = 120, A = 2.2, RE = 0.958;
+  const q = (r) => Math.exp(-A * (r - RE));
+  const D = [
+    (r) => De * (1 - q(r)) ** 2,
+    (r) => 2 * De * A * (q(r) - q(r) ** 2),
+    (r) => 2 * De * A * A * (2 * q(r) ** 2 - q(r)),
+    (r) => 2 * De * A ** 3 * (q(r) - 4 * q(r) ** 2),
+    (r) => 2 * De * A ** 4 * (8 * q(r) ** 2 - q(r)),
+  ];
+  const fact = [1, 1, 2, 6, 24];
+  const taylor = (r0, n) => (r) => { let s = 0, d = r - r0; for (let k = 0; k <= n; k++) s += D[k](r0) * d ** k / fact[k]; return s; };
+  let r0 = RE;
+  const orders = { 1: true, 2: true, 3: false, 4: false };
+  const colors = (c) => ({ 1: c.ink3, 2: c.acc, 3: c.ok, 4: c.mark });
+  const p1 = new HN.Plot(document.getElementById("c1"), {
+    xr: [0.7, 2.0], yr: [-5, 140], aspect: 0.6, xlabel: "r / Å", ylabel: "E / kcal·mol⁻¹", xticks: 0.2, yticks: 20,
+    draw(p) {
+      const c = C(), col = colors(c);
+      p.seg(0.7, De, 2.0, De, c.ink3, 1, [3, 4]); p.text("dissociation limit", 1.98, De, c.ink3, { align: "right", dy: -9, size: 10.5 });
+      p.curve(D[0], c.ink, 2.8);
+      [1, 2, 3, 4].forEach((n) => { if (orders[n]) p.curve(taylor(r0, n), col[n], 2, n % 2 ? [6, 4] : null); });
+      p.dot(r0, D[0](r0), c.ink, 5.5);
+    },
+  });
+  p1.drag((x, y, ph) => { if (ph === "up") return; r0 = Math.abs(x - RE) < 0.015 ? RE : Math.max(0.75, Math.min(1.8, x)); u1(); });
+  document.querySelectorAll("[data-o]").forEach((cb) => cb.addEventListener("change", () => { orders[cb.dataset.o] = cb.checked; p1.render(); }));
+  const o1 = document.getElementById("o1");
+  function window1(n) { // range around r0 where |error| < 1 kcal/mol
+    const f = taylor(r0, n), ok = (r) => Math.abs(f(r) - D[0](r)) < 1;
+    let lo = r0, hi = r0; while (lo > 0.6 && ok(lo - 0.002)) lo -= 0.002; while (hi < 2.5 && ok(hi + 0.002)) hi += 0.002;
+    return [lo, hi];
+  }
+  function u1() {
+    const w2 = window1(2), w4 = window1(4);
+    o1.innerHTML = '<div><span class="label">At r₀ = ' + HN.fmt(r0, 3) + ' Å</span><div class="val">E′ = ' + HN.fmt(D[1](r0), 1) + '<br>E″ = ' + HN.fmt(D[2](r0), 0) + '</div><div class="hint">kcal/mol/Å and kcal/mol/Å²</div></div>' +
+      '<div><span class="label">2nd order within 1 kcal/mol</span><div class="val">' + HN.fmt(w2[0], 3) + '–' + HN.fmt(w2[1], 3) + ' Å</div></div>' +
+      '<div><span class="label">4th order within 1 kcal/mol</span><div class="val">' + HN.fmt(w4[0], 3) + '–' + HN.fmt(w4[1], 3) + ' Å</div></div>';
+    p1.render();
+  }
+  u1();
+
+  /* ---------- Newton on the double well ---------- */
+  const E = (x) => x ** 4 - 2 * x * x + 0.3 * x, d1 = (x) => 4 * x ** 3 - 4 * x + 0.3, d2 = (x) => 12 * x * x - 4;
+  let hist = [1.6];
+  const p2 = new HN.Plot(document.getElementById("c2"), {
+    xr: [-1.8, 1.8], yr: [-1.6, 2.4], aspect: 0.6, xlabel: "x", ylabel: "E", xticks: 0.5, yticks: 0.5,
+    draw(p) {
+      const c = C(), x = hist[hist.length - 1], e = E(x), s = d1(x), k = d2(x);
+      p.curve(E, c.ink, 2.4);
+      p.curve((t) => e + s * (t - x) + 0.5 * k * (t - x) ** 2, k > 0 ? c.acc : c.mark, 2, [6, 4], x - 1.2, x + 1.2);
+      if (Math.abs(k) > 1e-6) { const xn = x - s / k; p.arrow(x, e, xn, e + s * (xn - x) + 0.5 * k * (xn - x) ** 2, k > 0 ? c.acc : c.mark, 2); }
+      hist.forEach((h, i) => p.dot(h, E(h), i === hist.length - 1 ? c.ink : c.ink3, i === hist.length - 1 ? 5.5 : 3.5));
+    },
+  });
+  p2.drag((x, y, ph) => { if (ph !== "down") return; hist = [Math.max(-1.7, Math.min(1.7, x))]; u2(); });
+  const tab = document.getElementById("hist"), note = document.getElementById("nnote");
+  function u2() {
+    tab.innerHTML = "<thead><tr><th>Step</th><th>x</th><th>E′</th><th>E″</th></tr></thead><tbody>" +
+      hist.map((x, i) => "<tr><td>" + i + "</td><td>" + HN.fmt(x, 6) + "</td><td>" + HN.fmt(d1(x), 5) + "</td><td>" + HN.fmt(d2(x), 3) + "</td></tr>").join("") + "</tbody>";
+    const x = hist[hist.length - 1];
+    if (Math.abs(d1(x)) < 1e-6) note.textContent = "Converged to a stationary point with E″ " + (d2(x) > 0 ? "> 0: a minimum." : "< 0: the barrier top, a maximum. Newton cannot tell the difference.");
+    else note.textContent = d2(x) < 0 ? "Curvature is negative here, so the model's stationary point is a maximum." : "Curvature is positive, so the model points toward a minimum.";
+    p2.render();
+  }
+  document.getElementById("step").addEventListener("click", () => {
+    const x = hist[hist.length - 1], k = d2(x); if (Math.abs(k) < 1e-9 || hist.length > 12) return;
+    hist.push(Math.max(-3, Math.min(3, x - d1(x) / k))); u2();
+  });
+  document.getElementById("reset").addEventListener("click", () => { hist = [1.6]; u2(); });
+  u2();
+})();
+</script>
+</body>
+</html>

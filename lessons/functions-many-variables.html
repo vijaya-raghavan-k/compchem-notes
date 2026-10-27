@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Functions of Many Variables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  .twin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; margin-top: 12px; }
+  @media (max-width: 560px) { .twin { grid-template-columns: minmax(0, 1fr); } }
+  .twin canvas { background: var(--sheet); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.3</div>
+    <h1>Functions of many variables</h1>
+    <p class="goal">Goal: read the energy as one number computed from all atomic coordinates, \(E(\mathbf R)\), and understand what a potential energy surface is, how many dimensions it has, and why we can never draw it completely.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Every geometry is a point; every point has an energy</h2>
+    <p>A function takes inputs and returns one output. For a molecule, the inputs are the coordinates of its atoms and the output is the energy. To draw it we must pick at most two inputs. For water, choose the O–H bond length \(r\) (both bonds equal) and the H–O–H angle \(\theta\). Each point of the map below is one geometry; the shading and contour lines show its energy.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Model water surface E(r, θ)</b><span class="hint">Drag across the map</span></div>
+      <div class="panel-body">
+        <canvas id="map" class="plot" role="img" aria-label="Contour map of energy against bond length r on the horizontal axis and bond angle theta on the vertical axis, with a single minimum near r = 0.96 ångström and theta = 104.5 degrees. A draggable marker selects a geometry."></canvas>
+        <div class="twin">
+          <canvas id="mol" class="plot" role="img" aria-label="Drawing of the water molecule at the selected bond length and angle."></canvas>
+          <canvas id="slice" class="plot" role="img" aria-label="Energy along r at the selected angle: a one-dimensional slice of the map."></canvas>
+        </div>
+        <div class="readout" id="out"></div>
+        <p class="hint" style="margin-top:10px">Model energy in kcal/mol relative to the minimum: Morse bond stretches plus a harmonic bend. The shape is realistic; the numbers are illustrative.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px">Three things to notice. The lowest point is the equilibrium geometry. Contour lines are crowded where the energy changes quickly (compressing the bond) and spread out where it changes slowly (stretching it). And the right-hand plot is just one horizontal line through the map: a function of one variable is a slice of a function of many.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Evaluating an energy by hand</h2>
+    <p>The bond part of the model is a Morse function, a standard description of a chemical bond:</p>
+    <div class="math">\[ E(r) = D_e\left(1 - e^{-a(r - r_e)}\right)^2, \qquad D_e = 120\ \text{kcal/mol},\ a = 2.2\ \text{Å}^{-1},\ r_e = 0.958\ \text{Å} \]</div>
+    <ol class="work">
+      <li><div>Stretch the bond by 0.1 Å, to \(r = 1.058\) Å. Then \(a(r-r_e) = 2.2 \times 0.1 = 0.22\) and \(e^{-0.22} = 0.8025\).
+        \[ E = 120\,(1 - 0.8025)^2 = 120 \times 0.0390 = 4.68\ \text{kcal/mol} \]</div></li>
+      <li><div>Compress it by 0.1 Å, to \(r = 0.858\) Å. Now \(a(r-r_e) = -0.22\) and \(e^{+0.22} = 1.2461\).
+        \[ E = 120\,(1 - 1.2461)^2 = 120 \times 0.0606 = 7.27\ \text{kcal/mol} \]</div></li>
+      <li><div>The same 0.1 Å costs 55% more energy in compression. A real bond is not symmetric around its minimum; this asymmetry is called anharmonicity and returns in lesson 1.7.</div></li>
+      <li><div><b>How many inputs does the full function need?</b> Water has 3 atoms, so 9 Cartesian coordinates. But moving the whole molecule (3 translations) or turning it (3 rotations) cannot change its energy. That leaves \(9 - 6 = 3\) coordinates that matter: \(r_1\), \(r_2\) and \(\theta\). The map above shows a 2D cut through this 3D function, taken along \(r_1 = r_2\).</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> For \(N\) atoms, \(E\) depends on \(3N - 6\) internal coordinates (\(3N - 5\) if the molecule is linear, because rotating a line about its own axis moves nothing). This number is the dimension of the potential energy surface.</div>
+
+    <div class="panel try-block" data-solution="Benzene: 3×12 − 6 = 30. CO₂ is linear: 3×3 − 5 = 4. A 10-atom molecule has 24 internal coordinates, so 10 points each gives 10²⁴ geometries." data-hint="Not yet. Count 3N first, then subtract 6 (or 5 for a linear molecule). For the grid, the number of points is 10 raised to the number of dimensions.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Count dimensions</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">Benzene (C₆H₆)</label><input id="t1" data-ans="30" data-tol="0.1" inputmode="numeric" autocomplete="off"></div>
+          <div class="field"><label for="t2">CO₂ (linear)</label><input id="t2" data-ans="4" data-tol="0.1" inputmode="numeric" autocomplete="off"></div>
+          <div class="field"><label for="t3">10 atoms, 10 pts/dim: 10^?</label><input id="t3" data-ans="24" data-tol="0.1" inputmode="numeric" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>What programs actually do with E(R)</h2>
+    <p>Write all \(3N\) Cartesian coordinates as one column \(\mathbf R\), as in lesson 1.1. The quantum chemistry program is then a machine that evaluates one function:</p>
+    <div class="math">\[ \mathbf R = (x_1, y_1, z_1, \dots, x_N, y_N, z_N) \ \longmapsto\ E(\mathbf R) \]</div>
+    <ul>
+      <li><b>Single-point calculation:</b> one evaluation of \(E\) at one \(\mathbf R\). For DFT this means solving the SCF equations once.</li>
+      <li><b>Rigid scan:</b> change one coordinate in steps, keep all others fixed, evaluate \(E\) each time. This is a straight-line slice like the right-hand plot above.</li>
+      <li><b>Relaxed scan:</b> change one coordinate in steps, but optimize all other coordinates at every step. This follows the valley floor instead of a straight line, and is the right way to estimate a barrier along a chosen coordinate.</li>
+      <li><b>Geometry optimization:</b> find the lowest point nearby without mapping anything. How that is possible without a map is the subject of lessons 1.4 to 1.7.</li>
+    </ul>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Why mapping is impossible</h3>
+    <p style="margin-top:8px">With only 10 points per coordinate, the number of single points needed to map a surface grows explosively:</p>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>Molecule</th><th>Atoms N</th><th>3N − 6</th><th>Grid points</th></tr></thead>
+      <tbody>
+        <tr><td>H₂O</td><td>3</td><td>3</td><td>10³ = 1 000</td></tr>
+        <tr><td>CH₃OH</td><td>6</td><td>12</td><td>10¹²</td></tr>
+        <tr><td>Ethyl acetate</td><td>14</td><td>36</td><td>10³⁶</td></tr>
+        <tr><td>A 40-atom oligomer</td><td>40</td><td>114</td><td>10¹¹⁴</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:12px">This is the central practical fact of computational chemistry: we can only ever look at the surface locally. Everything that follows (gradients, Hessians, optimizers, transition-state searches, molecular dynamics) is a way to learn about a huge surface from a few carefully chosen points.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Energy units you will meet</h3>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>1 Hartree (Eₕ)</th><th>kcal/mol</th><th>kJ/mol</th><th>eV</th><th>cm⁻¹</th></tr></thead>
+      <tbody><tr><td>=</td><td>627.509</td><td>2625.50</td><td>27.2114</td><td>219 474.6</td></tr></tbody>
+    </table></div>
+    <p class="hint" style="margin-top:8px">Programs work internally in Hartree and Bohr (1 Bohr = 0.529177 Å). Chemists report relative energies in kcal/mol or kJ/mol.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: what E(R) really is</summary>
+      <div>
+        <p><b>Born–Oppenheimer.</b> Nuclei are thousands of times heavier than electrons, so for a fixed nuclear arrangement \(\mathbf R\) we solve the electronic problem alone. Its lowest eigenvalue plus the nuclear repulsion is \(E(\mathbf R)\). The surface exists because of this separation; lesson 3.1 returns to it.</p>
+        <p><b>One surface per electronic state.</b> The ground state \(S_0\), the lowest triplet \(T_1\) and the excited states each have their own \(E(\mathbf R)\). Surfaces can approach or cross, and radical or photochemical reactions may switch between them. For closed-shell thermal reactions we usually stay on \(S_0\).</p>
+        <p><b>Invariance in symbols.</b> For any translation \(\mathbf t\) and rotation \(\mathbf Q\), \(E(\mathbf R + \mathbf t) = E(\mathbf R)\) and \(E(\mathbf Q\mathbf R) = E(\mathbf R)\). These six exact symmetries are why six eigenvalues of the Hessian come out (nearly) zero in every frequency calculation, a fact we will use in lessons 1.9 and 1.10.</p>
+        <p><b>Coordinates describe, they do not change.</b> The energy is one function of the geometry. Writing it as \(E(x_1,\dots,z_N)\) or \(E(r_1, r_2, \theta)\) is a choice of description. The choice does not change minima or barrier heights, but it strongly changes how easily an optimizer finds them (lesson 2.3).</p>
+        <p><b>Smoothness is approximate.</b> Calculus assumes \(E\) is smooth. In practice, finite integration grids and incomplete SCF convergence add tiny noise to \(E(\mathbf R)\). It is invisible in energies but can matter for second derivatives (lesson 1.11).</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">How many coordinates does the potential energy surface of ethylene (C₂H₄, 6 atoms, non-linear) depend on?</p>
+      <div class="options"><button type="button">18</button><button type="button">12</button><button type="button">6</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["18 is the number of Cartesian coordinates, 3N. Six of those directions only move or turn the molecule.","Correct. 3 × 6 − 6 = 12.","6 is the number of atoms. Each atom needs 3 numbers, and then 6 overall motions are removed.","Start with 3N = 18 Cartesian coordinates, then remove 3 translations and 3 rotations: 18 − 6 = 12."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">In a relaxed scan of a C–O bond length, what happens to all the other coordinates at each step?</p>
+      <div class="options"><button type="button">They are optimized</button><button type="button">They stay at their starting values</button><button type="button">They are removed from the calculation</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Only the scanned coordinate is constrained; everything else relaxes to the lowest energy available, so the scan follows the valley floor.","That describes a rigid scan. It usually overestimates barriers because the rest of the molecule cannot adapt.","All atoms remain in the calculation; only one coordinate is held at the chosen value.","In a relaxed scan one coordinate is fixed at each value and all other coordinates are optimized. A rigid scan keeps them frozen instead."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Why do programs never map the full surface of a 20-atom molecule on a grid?</p>
+      <div class="options"><button type="button">The energy is not defined at most geometries</button><button type="button">Coordinates would take too much memory</button><button type="button">54 dimensions need about 10⁵⁴ single points</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["E(R) is defined at every geometry, but evaluating it costs a full electronic-structure calculation.","Storing coordinates is trivial. The problem is the number of expensive energy evaluations.","Correct. 3 × 20 − 6 = 54 dimensions; even 10 points per dimension is far beyond any computer, which is why we explore locally with gradients.","A 20-atom molecule has 54 internal coordinates. A grid with 10 points along each would need 10⁵⁴ calculations, so we only ever explore the surface locally."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="vectors-dot-product.html">← 1.2 Vector length and the dot product</a>
+    <a href="derivatives.html">1.4 Derivatives →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const De = 120, A = 2.2, RE = 0.958, KT = 100, T0 = 104.5;
+  const morse = (r) => De * (1 - Math.exp(-A * (r - RE))) ** 2;
+  const bend = (tdeg) => 0.5 * KT * ((tdeg - T0) * Math.PI / 180) ** 2;
+  const E = (r, t) => 2 * morse(r) + bend(t);
+  let cur = { r: 1.10, t: 125 };
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), sheet: HN.css("--sheet") });
+
+  const map = new HN.Plot(document.getElementById("map"), {
+    xr: [0.75, 1.65], yr: [70, 180], aspect: 0.62, xlabel: "r / Å", ylabel: "θ / degrees", yticks: 20, xticks: 0.1,
+    field: E, fieldOpts: { mode: "seq", transform: "sqrt", step: 1.25, max: 160 },
+    draw(p) {
+      const c = C();
+      p.seg(0.75, cur.t, 1.65, cur.t, c.mark, 1.2, [4, 4]);
+      p.dot(RE, T0, c.ink, 5, true);
+      p.text("minimum", RE, T0, c.ink, { dx: 9, dy: 12, size: 11 });
+      p.dot(cur.r, cur.t, c.mark, 6.5);
+    },
+  });
+  map.drag((x, y, ph) => {
+    if (ph === "up") return;
+    cur.r = Math.max(0.78, Math.min(1.62, x)); cur.t = Math.max(72, Math.min(178, y)); upd();
+  });
+
+  const mol = new HN.Plot(document.getElementById("mol"), {
+    xr: [-2, 2], yr: [-1.4, 1.2], aspect: 0.72, axes: false, pad: { l: 4, r: 4, t: 4, b: 4 }, equal: true,
+    draw(p) {
+      const c = C(), g = p.ctx, half = (cur.t / 2) * Math.PI / 180, oy = 0.35;
+      const h1 = [-cur.r * Math.sin(half), oy - cur.r * Math.cos(half)], h2 = [cur.r * Math.sin(half), oy - cur.r * Math.cos(half)];
+      [h1, h2].forEach((h) => p.seg(0, oy, h[0], h[1], c.ink3, 5));
+      const atom = (x, y, r, fill, stroke, lab, tc) => { g.beginPath(); g.arc(p.X(x), p.Y(y), r * p.dpr, 0, 2 * Math.PI); g.fillStyle = fill; g.fill(); if (stroke) { g.strokeStyle = stroke; g.lineWidth = 2 * p.dpr; g.stroke(); } p.text(lab, x, y, tc, { align: "center", size: 12, weight: 600 }); };
+      atom(0, oy, 17, c.mark, null, "O", c.sheet);
+      atom(h1[0], h1[1], 11, c.sheet, c.ink2, "H", c.ink);
+      atom(h2[0], h2[1], 11, c.sheet, c.ink2, "H", c.ink);
+      p.text("r = " + HN.fmt(cur.r, 3) + " Å", -1.9, 1.05, c.ink2, { size: 11 });
+      p.text("θ = " + HN.fmt(cur.t, 1) + "°", -1.9, 0.82, c.ink2, { size: 11 });
+    },
+  });
+
+  const slice = new HN.Plot(document.getElementById("slice"), {
+    xr: [0.75, 1.65], yr: [0, 160], aspect: 0.62, xlabel: "r / Å", ylabel: "E / kcal·mol⁻¹", xticks: 0.2, yticks: 40, pad: { l: 40, r: 10, t: 10, b: 34 },
+    draw(p) {
+      const c = C();
+      p.curve((r) => E(r, cur.t), c.acc, 2.4);
+      p.dot(cur.r, E(cur.r, cur.t), c.mark, 5.5);
+      p.text("slice at θ = " + HN.fmt(cur.t, 0) + "°", 1.62, 150, c.ink2, { align: "right", size: 10.5 });
+    },
+  });
+
+  const out = document.getElementById("out");
+  function upd() {
+    const e = E(cur.r, cur.t), eb = 2 * morse(cur.r), ea = bend(cur.t);
+    out.innerHTML = '<div><span class="label">Geometry</span><div class="val">r = ' + HN.fmt(cur.r, 3) + ' Å<br>θ = ' + HN.fmt(cur.t, 1) + '°</div></div>' +
+      '<div><span class="label">Energy E(r, θ)</span><div class="val">' + HN.fmt(e, 2) + ' kcal/mol</div><div class="hint">bonds ' + HN.fmt(eb, 2) + ' + bend ' + HN.fmt(ea, 2) + '</div></div>';
+    map.render(); mol.render(); slice.render();
+  }
+  upd();
+})();
+</script>
+</body>
+</html>

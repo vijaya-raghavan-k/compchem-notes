@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Imaginary Frequencies and Transition States</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.11</div>
+    <h1>Imaginary frequencies and transition states</h1>
+    <p class="goal">Goal: understand why a negative Hessian eigenvalue becomes an imaginary frequency, verify a transition state properly, and tell a real reaction mode from numerical noise.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Curvature at every point of a reaction surface</h2>
+    <p>Here is a model surface with two minima (reactant and product) joined through a saddle point. At any point you choose, the page computes the Hessian, diagonalizes it (lesson 1.9) and draws its two eigenvectors: blue for positive curvature, pink for negative. The shaded band is where one curvature is negative.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Hessian eigenvectors across a reaction surface</b><span class="hint">Drag the point</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="Contour map of a two-minimum surface with a saddle point between them. At the chosen point, the Hessian eigenvectors are drawn, pink for negative curvature and blue for positive. A shaded band marks where one curvature is negative."></canvas>
+        <div class="legend"><span><i class="bg-accent"></i>positive curvature</span><span><i class="bg-mark"></i>negative curvature</span><span><i class="bg-ink"></i>steepest-descent paths</span></div>
+        <div class="btn-row">
+          <button class="btn" type="button" data-go="A">Go to reactant</button>
+          <button class="btn" type="button" data-go="TS">Go to saddle</button>
+          <button class="btn" type="button" data-go="B">Go to product</button>
+          <button class="btn" type="button" id="follow">Follow both downhill directions</button>
+        </div>
+        <div class="readout" id="o1"></div>
+        <canvas id="c2" class="plot" style="margin-top:14px" role="img" aria-label="Energy along each eigenvector direction through the chosen point. At the saddle, one slice curves up and the other curves down."></canvas>
+        <p class="hint" style="margin-top:8px">Lower plot: energy along each eigenvector through the point, \(E(\mathbf x + s\,\mathbf v_k) - E(\mathbf x)\). A slice that curves down is the direction with an imaginary frequency.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px">At the saddle, the slice along the pink eigenvector is an upside-down parabola: the reaction coordinate. Press "Follow both downhill directions": starting a tiny step either way along it and sliding downhill leads to the reactant on one side and the product on the other. That is exactly the logic of an IRC calculation. Also notice: inside the shaded band, points that are <em>not</em> stationary still have a negative curvature, but their gradient is not zero, so they are not transition states.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Why the frequency becomes imaginary</h2>
+    <ol class="work">
+      <li><div>From lesson 1.10, each mode satisfies \(\mathbf H_\text{mw}\mathbf v = \omega^2\mathbf v\), so \(\omega = \sqrt{\lambda}\). Along a direction of negative curvature, \(\lambda &lt; 0\), and the square root is imaginary:
+        \[ \lambda &lt; 0 \quad\Rightarrow\quad \omega = \sqrt{\lambda} = i\sqrt{|\lambda|} \]</div></li>
+      <li><div>What does that mean physically? Solve the equation of motion along that mode, \(\ddot q = -\lambda q = +|\lambda|\,q\):
+        \[ q(t) = A\,e^{+\sqrt{|\lambda|}\,t} + B\,e^{-\sqrt{|\lambda|}\,t} \]
+        No oscillation: a small push grows exponentially. The structure is unstable along this one direction, like a ball balanced on a ridge.</div></li>
+      <li><div>Programs still report a number by applying the usual conversion to \(\sqrt{|\lambda|}\) and marking it, either with an \(i\) or, more commonly, with a minus sign. For \(\lambda = -0.088\) Hartree/(Bohr² amu):
+        \[ \tilde\nu = 5140.48\,\sqrt{0.088} = 1525 \ \Rightarrow\ \text{printed as } 1525i \text{ or } -1525\ \text{cm}^{-1} \]
+        The minus sign is a label, not a negative frequency.</div></li>
+      <li><div>How small is a small imaginary mode? For \(-20\) cm⁻¹, \(|\lambda| = (20/5140.48)^2 = 1.5\times10^{-5}\) Hartree/(Bohr² amu), about 6000 times smaller than the reaction mode above. Curvatures that small are comparable to the numerical noise of DFT gradients (lesson 1.4).</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> An imaginary frequency is a negative Hessian eigenvalue after mass weighting. One of them at a stationary point marks a first-order saddle; its eigenvector is the motion that turns reactant into product.</div>
+
+    <div class="panel try-block" data-solution="5140.48 × √0.05 = 5140.48 × 0.2236 ≈ 1149, so 1149i cm⁻¹. 5140.48 × √0.0004 = 5140.48 × 0.02 ≈ 103, so 103i cm⁻¹. A transition state has exactly one imaginary frequency." data-hint="Not yet. ν̃ = 5140.48 × √|λ|; the sign of λ only decides whether it is labelled imaginary.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Mass-weighted eigenvalues in Hartree/(Bohr² amu)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">λ = −0.05 → |ν̃| / cm⁻¹</label><input id="t1" data-ans="1149" data-tol="3" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">λ = −0.0004 → |ν̃| / cm⁻¹</label><input id="t2" data-ans="103" data-tol="2" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">imaginary modes in a valid TS</label><input id="t3" data-ans="1" data-tol="0.1" inputmode="numeric" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Verifying a transition state, and handling spurious modes</h2>
+    <h3 style="font-size:var(--s-1);margin-top:8px">A transition-state checklist</h3>
+    <ol class="work">
+      <li><div><b>Stationary.</b> The optimization converged on all gradient and step criteria. A negative eigenvalue at a non-stationary point (anywhere in the shaded band above) means nothing.</div></li>
+      <li><div><b>Exactly one imaginary frequency.</b> Zero means you found a minimum; two or more means a higher-order saddle, and the extra imaginary modes show directions in which the structure can still relax.</div></li>
+      <li><div><b>The right motion.</b> Animate the imaginary mode. It should move the atoms that the reaction moves: the bonds being formed and broken. A methyl rotation as the imaginary mode means you found a conformational saddle, not your reaction.</div></li>
+      <li><div><b>The right connection.</b> Run an IRC (lesson 2.5) in both directions and confirm it reaches the intended reactant and product, as the steepest-descent paths did in Step 1.</div></li>
+      <li><div><b>A plausible magnitude.</b> The size of the imaginary frequency reflects how sharply the barrier top curves along the reaction path, scaled by the moving masses. Hydrogen transfers typically give large values (often above 1000i cm⁻¹), heavy-atom rearrangements smaller ones.</div></li>
+    </ol>
+
+    <div class="note" style="border-color:var(--ok);background:var(--ok-wash)"><b>Bridge to my own work: β-H transfer.</b> In a concerted six-membered β-hydrogen transfer (the classic cis-elimination of esters), the imaginary mode should show the β-hydrogen moving from carbon toward the carbonyl oxygen, coupled with the alkyl C–O bond lengthening. In an AMS frequency output, look for the single negative entry in the frequency list, open its normal-mode displacements, and check that the largest components belong to that hydrogen and those two bonds. Then confirm with an IRC.</div>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Small imaginary frequencies at a "minimum"</h3>
+    <p style="margin-top:8px">A value such as −15 or −40 cm⁻¹ on a structure that should be a minimum is common, especially for floppy molecules with methyl rotors or long chains. Typical causes and fixes:</p>
+    <ul>
+      <li><b>Loose geometry convergence.</b> The structure is slightly off the stationary point. Re-optimize with tighter criteria.</li>
+      <li><b>Numerical noise.</b> Coarse integration grids or loose SCF convergence add noise to gradients, which a numerical Hessian amplifies (lesson 1.4). Use a finer grid and tighter SCF for the frequency job.</li>
+      <li><b>A real shallow saddle.</b> Displace the geometry along the imaginary mode (a small fraction of the printed displacement, in either direction), re-optimize, and recompute frequencies. If the mode disappears and the energy drops, the original structure really was a saddle.</li>
+      <li><b>Imposed symmetry.</b> A structure forced to be planar or symmetric may be a saddle in the full space. Lower or remove the symmetry and repeat.</li>
+    </ul>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">The imaginary frequency in kinetics</h3>
+    <p style="margin-top:8px">Transition state theory (lesson 2.7) treats the imaginary mode as the reaction coordinate and leaves it out of the partition function. Its magnitude enters tunneling corrections. The simplest is Wigner's,</p>
+    <div class="math">\[ \kappa = 1 + \frac{1}{24}\left(\frac{h c\,|\tilde\nu^\ddagger|}{k_B T}\right)^2 \]</div>
+    <p>For \(|\tilde\nu^\ddagger| = 1500\) cm⁻¹ at 600 K, \(hc\tilde\nu/k_BT = 1500 \times 1.4388/600 = 3.60\) and \(\kappa = 1 + 3.60^2/24 = 1.54\). At 298 K the same formula gives 3.2, a value large enough that more rigorous tunneling methods are needed.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: why exactly one, and what can still go wrong</summary>
+      <div>
+        <p><b>Murrell–Laidler.</b> The minimum-energy path between two minima crosses its highest point at a saddle with exactly one negative curvature. If the highest point had two, a path around it would be lower, so it could not be the highest point of the lowest path. This is why the transition state is defined as a first-order saddle.</p>
+        <p><b>Higher-order saddles and symmetry.</b> Symmetric structures are often second-order saddles: one imaginary mode is the reaction, another breaks the symmetry. Following the second mode down usually leads to a lower, less symmetric transition state.</p>
+        <p><b>One saddle is not the whole story.</b> Flexible molecules have many transition-state conformers. The relevant barrier comes from the lowest of them (or a Boltzmann-weighted set), so conformer searches matter at transition states as much as at minima. At high temperature the free-energy maximum along the path can shift away from the energy saddle, which variational transition state theory accounts for.</p>
+        <p><b>Back to the start.</b> In \(\mathbf H\mathbf v = \lambda\mathbf v\): \(\mathbf H\) is the matrix of second derivatives of \(E(\mathbf R)\), built column by column from gradient differences; \(\mathbf v\) is a \(3N\)-component displacement of all atoms, the same kind of vector as in lesson 1.1; \(\lambda\) is the curvature along it, which after mass weighting is \(\omega^2\). A negative \(\lambda\) at a stationary point is the reaction coordinate. Every symbol now has a physical, mathematical and computational meaning.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">A converged transition-state optimization gives two imaginary frequencies, −1450 and −210 cm⁻¹. What did you find?</p>
+      <div class="options"><button type="button">A valid transition state with an extra mode</button><button type="button">A second-order saddle; it can relax further along the second mode</button><button type="button">A minimum</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["A transition state has exactly one negative curvature. The second one is a direction in which energy still decreases.","Correct. Displace along the −210 mode, re-optimize as a TS, and check that only the reaction mode remains imaginary.","A minimum has no imaginary frequencies.","Two negative eigenvalues make it a second-order saddle. The −210 mode shows a direction (often a rotation or symmetry break) along which the structure can lower its energy."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">An optimized flexible molecule shows one imaginary frequency of −18 cm⁻¹, a methyl rotation. What is the best next step?</p>
+      <div class="options"><button type="button">Report it as a transition state</button><button type="button">Ignore it; small imaginary modes never matter</button><button type="button">Tighten grid and convergence, or displace along the mode and re-optimize</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["A methyl rotation is not a reaction, and a value this small is likely noise or a shallow rotor saddle.","Small imaginary modes can signal a wrong conformer and distort entropies and free energies.","Correct. Either the structure is slightly off and noise is visible, or it really is a rotor saddle; both are resolved by tighter settings or displacing and re-optimizing.","A curvature of −18 cm⁻¹ is tiny, close to numerical noise, and the motion is not a reaction. Tighten the calculation or push along the mode and re-optimize to reach the true minimum."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">Why does a negative Hessian eigenvalue give an imaginary frequency rather than a slow vibration?</p>
+      <div class="options"><button type="button">ω = √λ is imaginary for λ &lt; 0, and the motion grows exponentially instead of oscillating</button><button type="button">The program cannot compute it</button><button type="button">The atoms move backwards in time</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. With negative curvature the restoring force becomes a pushing force: q̈ = +|λ|q, whose solutions are exponentials.","It can be computed; the square root of a negative number is simply imaginary.","The negative sign is a label for imaginary ω, not a statement about time.","A vibration needs a restoring force. With λ &lt; 0, a displacement produces a force that pushes further away, so q grows as e^(√|λ|t) and ω = √λ is imaginary."]'></p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="label">End of part 1</span>
+    <h2>What you can now read</h2>
+    <p>From coordinates to transition states, the eleven lessons of this part build one chain: a geometry is a vector, energy is a function of it, the gradient is its slope, the Hessian its curvature, and the eigen-decomposition of the mass-weighted Hessian gives frequencies and reaction coordinates. Part 2 uses this chain to explain how optimizers, transition-state searches and IRC calculations actually move across the surface.</p>
+  </section>
+
+  <nav class="pager">
+    <a href="normal-modes.html">← 1.10 Mass weighting and normal modes</a>
+    <a href="../index.html">Contents →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), markW: HN.css("--mark-wash"), ok: HN.css("--ok") });
+  const B = 0.6;
+  const E = (x, y) => (x * x - 1) ** 2 + 1.5 * y * y + B * x * y;
+  const gx = (x, y) => 4 * x * (x * x - 1) + B * y, gy = (x, y) => 3 * y + B * x;
+  const hess = (x) => [12 * x * x - 4, B, 3];
+  const descend = (x, y) => { for (let i = 0; i < 4000; i++) { const a = gx(x, y), b = gy(x, y); if (Math.hypot(a, b) < 1e-9) break; x -= 0.02 * a; y -= 0.02 * b; } return [x, y]; };
+  const MA = descend(-1, 0.2), MB = descend(1, -0.2), TS = [0, 0];
+  const band = Math.sqrt((4 + B * B / 3) / 12);
+  let P = [0.32, 0.35], paths = [];
+
+  const map = new HN.Plot(document.getElementById("c1"), {
+    xr: [-1.8, 1.8], yr: [-1.2, 1.2], equal: true, aspect: 0.66, xlabel: "x", ylabel: "y",
+    field: E, fieldOpts: { transform: "sqrt", step: 0.13, max: 6 },
+    draw(p) {
+      const c = C(), g = p.ctx;
+      g.globalAlpha = 0.35; g.fillStyle = c.markW; g.fillRect(p.X(-band), p.T, p.X(band) - p.X(-band), p.B - p.T); g.globalAlpha = 1;
+      paths.forEach((pt) => p.path(pt, c.ink, 2.2));
+      p.text("reactant", MA[0], MA[1], c.ink2, { align: "center", dy: 18, size: 11 });
+      p.text("product", MB[0], MB[1], c.ink2, { align: "center", dy: -16, size: 11 });
+      const [a, b, cc] = hess(P[0]), e = HN.eig2(a, b, cc);
+      e.v.forEach((u, i) => { const col = e.l[i] < 0 ? c.mark : c.acc, L = 22 + 14 * Math.sqrt(Math.abs(e.l[i])); p.arrowDir(P[0], P[1], u[0], u[1], L, col, 2.6); p.arrowDir(P[0], P[1], -u[0], -u[1], L, col, 2.6); });
+      p.dot(P[0], P[1], c.ink, 5.5);
+    },
+  });
+  map.drag((x, y, ph) => {
+    if (ph === "up") return;
+    let q = [Math.max(-1.75, Math.min(1.75, x)), Math.max(-1.15, Math.min(1.15, y))];
+    [MA, MB, TS].forEach((s) => { if (Math.hypot(q[0] - s[0], q[1] - s[1]) < 0.06) q = s.slice(); });
+    P = q; upd();
+  });
+  const go = { A: MA, B: MB, TS };
+  document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => { P = go[b.dataset.go].slice(); upd(); }));
+  document.getElementById("follow").addEventListener("click", () => {
+    const [a, b, cc] = hess(P[0]), e = HN.eig2(a, b, cc), v = e.v[0];
+    paths = [1, -1].map((s) => {
+      let x = P[0] + s * 0.03 * v[0], y = P[1] + s * 0.03 * v[1]; const pts = [P.slice(), [x, y]];
+      for (let i = 0; i < 3000; i++) { const ga = gx(x, y), gb = gy(x, y), n = Math.hypot(ga, gb); if (n < 1e-4) break; const st = Math.min(0.01, 0.02 * n) / n; x -= st * ga; y -= st * gb; if (i % 3 === 0) pts.push([x, y]); }
+      pts.push([x, y]); return pts;
+    });
+    upd();
+  });
+
+  const sl = new HN.Plot(document.getElementById("c2"), {
+    xr: [-0.8, 0.8], yr: [-0.6, 0.8], aspect: 0.4, xlabel: "displacement s along eigenvector", ylabel: "ΔE", xticks: 0.2, pad: { l: 42, r: 12, t: 10, b: 36 },
+    draw(p) {
+      const c = C(), [a, b, cc] = hess(P[0]), e = HN.eig2(a, b, cc), E0 = E(P[0], P[1]);
+      e.v.forEach((u, i) => p.curve((s) => E(P[0] + s * u[0], P[1] + s * u[1]) - E0, e.l[i] < 0 ? c.mark : c.acc, 2.4));
+      p.dot(0, 0, c.ink, 4.5);
+    },
+  });
+
+  const o1 = document.getElementById("o1");
+  o1.innerHTML = '<div><span class="label">Gradient length</span><div class="val" id="og"></div></div><div><span class="label">Eigenvalues λ → √λ</span><div class="val" id="ol"></div></div><div><span class="label">Verdict</span><div class="val" id="ov" style="margin-top:6px"></div></div>';
+  function upd() {
+    const [a, b, cc] = hess(P[0]), e = HN.eig2(a, b, cc), gn = Math.hypot(gx(P[0], P[1]), gy(P[0], P[1]));
+    const fr = (l) => (l < 0 ? HN.fmt(Math.sqrt(-l), 2) + "i" : HN.fmt(Math.sqrt(l), 2));
+    document.getElementById("og").textContent = HN.fmt(gn, 3);
+    document.getElementById("ol").innerHTML = e.l.map((l) => HN.fmt(l, 2) + " → " + fr(l)).join("<br>");
+    const neg = e.l.filter((l) => l < 0).length, stat = gn < 0.01;
+    document.getElementById("ov").innerHTML = !stat ? '<span class="status">not stationary</span><div class="hint" style="margin-top:6px">' + (neg ? "Negative curvature, but the gradient is not zero, so this is not a transition state." : "Frequencies are only meaningful where the gradient is zero.") + '</div>'
+      : neg === 0 ? '<span class="status min">minimum</span><div class="hint" style="margin-top:6px">All frequencies real.</div>' : neg === 1 ? '<span class="status ts">first-order saddle</span><div class="hint" style="margin-top:6px">Exactly one imaginary frequency: a transition state.</div>' : '<span class="status ts">higher-order saddle</span>';
+    const ext = e.l.map((l) => 0.5 * l * 0.64);
+    sl.setRange(null, [Math.min(-0.15, ...ext) - 0.1, Math.max(0.15, ...ext) + 0.1]);
+    map.render(); sl.render();
+  }
+  upd();
+})();
+</script>
+</body>
+</html>

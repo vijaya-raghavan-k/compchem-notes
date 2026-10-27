@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mass Weighting and Normal Modes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.10</div>
+    <h1>Mass weighting and normal modes</h1>
+    <p class="goal">Goal: derive why the Hessian must be mass-weighted before diagonalizing, see how masses and force constants together set the vibrational frequencies and mode shapes, and follow every step a program takes from Hessian to cm⁻¹.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>A linear triatomic on springs</h2>
+    <p>Take three atoms on a line, like CO₂ moving only along its axis, joined by two identical springs. The Hessian (lesson 1.8) only knows about the springs. But how the atoms actually move also depends on how heavy they are: a light atom on a stiff spring vibrates fast, a heavy one slowly. Change the masses below and watch the modes and frequencies respond, while the Hessian stays exactly the same.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Normal modes of a linear A–B–A molecule</b><span class="hint">Pick a mode, then change the masses</span></div>
+      <div class="panel-body">
+        <div class="seg" id="mode" role="group" aria-label="Mode to animate">
+          <button type="button" data-v="0" aria-pressed="false">Mode 1</button>
+          <button type="button" data-v="1" aria-pressed="false">Mode 2</button>
+          <button type="button" data-v="2" aria-pressed="true">Mode 3</button>
+        </div>
+        <canvas id="c1" class="plot" style="margin-top:12px" role="img" aria-label="Three atoms on a line vibrating in the selected normal mode, with arrows showing their relative displacements."></canvas>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="mo">end-atom mass</label><output id="mo-v"></output></div><input id="mo" type="range" min="1" max="40" step="0.5" value="16"></div>
+          <div class="range"><div class="top"><label for="mc">centre-atom mass</label><output id="mc-v"></output></div><input id="mc" type="range" min="1" max="40" step="0.5" value="12"></div>
+          <div class="range"><div class="top"><label for="k">spring k</label><output id="k-v"></output></div><input id="k" type="range" min="2" max="20" step="0.5" value="16"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" type="button" data-p="co2">CO₂ (16, 12)</button>
+          <button class="btn" type="button" data-p="o18">¹⁸O isotope (18, 12)</button>
+          <button class="btn" type="button" data-p="heavy">Heavy centre (16, 40)</button>
+          <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="nomw"> Skip mass weighting (wrong)</label>
+        </div>
+        <div class="scroll"><table class="data" id="tab"></table></div>
+        <p class="hint" id="note" style="margin-top:10px"></p>
+      </div>
+    </div>
+    <p style="margin-top:16px">With CO₂ masses you get a symmetric stretch (the carbon stays still), an antisymmetric stretch (the carbon moves against both oxygens) and a zero-frequency mode, which is simply the whole molecule sliding along the line. Now tick "skip mass weighting": the program diagonalizes the bare Hessian, and the modes come out with the centre of mass moving and frequencies that ignore the masses entirely. That is the error mass weighting prevents.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>From Newton's law to an eigenvalue problem</h2>
+    <ol class="work">
+      <li><div>Near a minimum, the force is \(\mathbf F = -\mathbf H\Delta\mathbf x\) (lesson 1.8). Newton's law for every coordinate at once, with the masses on a diagonal matrix \(\mathbf M\), reads
+        \[ \mathbf M\,\ddot{\mathbf x} = -\mathbf H\,\mathbf x \]
+        The masses multiply the accelerations, so a plain eigen-decomposition of \(\mathbf H\) cannot be the whole story.</div></li>
+      <li><div>Change variables to mass-weighted coordinates \(\mathbf q = \mathbf M^{1/2}\mathbf x\), that is \(q_i = \sqrt{m_i}\,x_i\). Multiplying both sides by \(\mathbf M^{-1/2}\):
+        \[ \ddot{\mathbf q} = -\underbrace{\mathbf M^{-1/2}\,\mathbf H\,\mathbf M^{-1/2}}_{\mathbf H_\text{mw}}\,\mathbf q, \qquad (\mathbf H_\text{mw})_{ij} = \frac{H_{ij}}{\sqrt{m_i m_j}} \]</div></li>
+      <li><div>Try a solution in which every coordinate oscillates together: \(\mathbf q(t) = \mathbf v\cos\omega t\). Then \(\ddot{\mathbf q} = -\omega^2\mathbf q\), and the equation becomes
+        \[ \mathbf H_\text{mw}\,\mathbf v = \omega^2\,\mathbf v \]
+        An eigenvalue problem (lesson 1.9). Each eigenvector is a <b>normal mode</b>; each eigenvalue is the square of its angular frequency.</div></li>
+      <li><div><b>Diatomic, by hand.</b> Two atoms, one spring: \(\mathbf H = k\begin{pmatrix} 1 & -1 \\ -1 & 1 \end{pmatrix}\). Mass-weighting gives
+        \[ \mathbf H_\text{mw} = k\begin{pmatrix} 1/m_1 & -1/\sqrt{m_1m_2} \\ -1/\sqrt{m_1m_2} & 1/m_2 \end{pmatrix} \]
+        Its trace is \(k(1/m_1 + 1/m_2) = k/\mu\) and its determinant is zero. So the eigenvalues are \(0\) (translation) and \(k/\mu\): the familiar \(\omega = \sqrt{k/\mu}\) with reduced mass \(\mu = m_1m_2/(m_1+m_2)\) appears automatically.</div></li>
+      <li><div><b>Numbers for H³⁵Cl.</b> \(k = 5.16\) mdyn/Å, \(\mu = 1.008 \times 34.969/35.977 = 0.9798\) amu:
+        \[ \tilde\nu = 1302.8\sqrt{5.16/0.9798} = 1302.8 \times 2.295 = 2990\ \text{cm}^{-1} \]</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> The Hessian holds the springs; the masses decide how the atoms respond. Mass-weighting combines both into one symmetric matrix whose eigenvalues are \(\omega^2\).</div>
+
+    <div class="panel try-block" data-solution="μ(DCl) = 2.014 × 34.969 / 36.983 = 1.904 amu. ν̃ = 1302.8 √(5.16/1.904) = 1302.8 × 1.646 ≈ 2145 cm⁻¹. Ratio 2145/2990 ≈ 0.717. The force constant is unchanged because the electronic surface does not depend on nuclear mass; only μ changes." data-hint="Not yet. μ = m₁m₂/(m₁ + m₂) with m₁ = 2.014. Use the same k = 5.16 mdyn/Å, since isotopes share one potential energy surface.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">D³⁵Cl: deuterium mass 2.014 amu, same k</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">μ / amu</label><input id="t1" data-ans="1.904" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">ν̃ / cm⁻¹</label><input id="t2" data-ans="2145" data-tol="10" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">ratio ν̃(DCl)/ν̃(HCl)</label><input id="t3" data-ans="0.717" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>What a frequency calculation actually does</h2>
+    <ol class="work">
+      <li><div><b>Hessian.</b> At an optimized geometry, compute the \(3N\times3N\) Cartesian Hessian, analytically or by differencing gradients (lesson 1.8). Units: Hartree/Bohr².</div></li>
+      <li><div><b>Mass-weight.</b> Divide each element by \(\sqrt{m_im_j}\), using isotope masses in amu. Choosing a different isotope changes only this step.</div></li>
+      <li><div><b>Project.</b> Remove the 3 translations and 3 rotations (2 for linear molecules) so they appear as exact zeros rather than noisy small numbers.</div></li>
+      <li><div><b>Diagonalize.</b> Find the eigenvalues \(\lambda_k = \omega_k^2\) and eigenvectors \(\mathbf v_k\) of \(\mathbf H_\text{mw}\).</div></li>
+      <li><div><b>Convert.</b> With \(\lambda\) in Hartree/(Bohr² amu),
+        \[ \tilde\nu_k = \frac{\omega_k}{2\pi c} = 5140.48\,\sqrt{\lambda_k}\ \ \text{cm}^{-1} \]
+        (the constant is \(\sqrt{E_h/(a_0^2\,\text{amu})}/(2\pi c)\)). A negative \(\lambda\) has no real square root; that case is lesson 1.11.</div></li>
+      <li><div><b>Report the modes.</b> Programs print each mode as Cartesian displacements \(\mathbf d_k = \mathbf M^{-1/2}\mathbf v_k\), normalized, often with a mode "reduced mass" and "force constant". These are conventions; different programs normalize differently, so compare shapes rather than raw numbers between codes.</div></li>
+    </ol>
+    <ul>
+      <li><b>Orthogonality.</b> Mode vectors \(\mathbf v_k\) are orthogonal in the plain sense; the Cartesian displacements \(\mathbf d_k\) are orthogonal only in the mass-weighted sense, \(\sum_i m_i\,d_{k,i}\,d_{l,i} = 0\) (lesson 1.2).</li>
+      <li><b>Isotope effects come for free.</b> The potential energy surface, and so the Hessian, does not depend on nuclear mass. Swap H for D and re-run only steps 2–5. Bonds to hydrogen drop by a factor near \(1/\sqrt2\); this shift is the origin of kinetic isotope effects (lesson 2.7).</li>
+      <li><b>Thermochemistry uses these numbers.</b> The zero-point energy \(\tfrac12\sum_k h c\tilde\nu_k\), vibrational entropy and heat capacity all come from this list of frequencies (lesson 2.6). Low-frequency modes dominate the entropy and are the least accurate, which is why special treatments exist for them.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: the generalized eigenproblem, Eckart conditions and the GF method</summary>
+      <div>
+        <p><b>Equivalent form.</b> Substituting back, \(\mathbf H_\text{mw}\mathbf v = \omega^2\mathbf v\) is the same as the generalized eigenproblem \(\mathbf H\,\mathbf d = \omega^2\,\mathbf M\,\mathbf d\), with \(\mathbf d = \mathbf M^{-1/2}\mathbf v\). The same mathematical structure, \(\mathbf A\mathbf x = \lambda\mathbf B\mathbf x\), reappears in the SCF equations \(\mathbf F\mathbf C = \mathbf S\mathbf C\boldsymbol\varepsilon\), with the overlap matrix playing the role of the mass matrix.</p>
+        <p><b>Eckart conditions.</b> Removing rotations exactly requires defining a body-fixed frame. The Eckart conditions choose it so that, to first order, vibrations carry no linear or angular momentum. Projection is exact only at a stationary point; at a non-stationary geometry the gradient couples rotations and vibrations, another reason frequencies need a converged structure.</p>
+        <p><b>Wilson's GF method.</b> In internal coordinates, with force constants \(\mathbf F\) and the kinetic matrix \(\mathbf G = \mathbf B\mathbf M^{-1}\mathbf B^{\mathsf T}\) (B from lesson 1.4), the frequencies solve \(\det(\mathbf G\mathbf F - \lambda\mathbf I) = 0\). Spectroscopists used this before Cartesian Hessians were cheap; it is still the clearest way to see which internal coordinates a mode involves (potential energy distribution analysis).</p>
+        <p><b>Limits of the picture.</b> Everything here is harmonic. Real fundamentals are lower because of anharmonicity, and modes can mix through Fermi resonance (in real CO₂ the symmetric stretch mixes with the bend overtone, splitting the band near 1340 cm⁻¹). VPT2 and vibrational SCF go beyond the harmonic model using higher derivatives.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">Why is the Hessian mass-weighted before it is diagonalized?</p>
+      <div class="options"><button type="button">Newton's law has masses on the accelerations; mass-weighting turns it into one symmetric eigenproblem whose eigenvalues are ω²</button><button type="button">To convert Hartree into cm⁻¹</button><button type="button">To make the Hessian symmetric</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Mẍ = −Hx becomes q̈ = −H_mw q with q = M^½x, and oscillating solutions satisfy H_mw v = ω² v.","Unit conversion is a separate final step with a constant factor.","The Hessian is already symmetric; mass-weighting keeps it symmetric while including the masses.","Vibrations follow Newton’s law, Mẍ = −Hx. The masses must enter somewhere; scaling coordinates by √m gives a symmetric matrix H_mw whose eigenvalues are the squared frequencies."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">A C–H stretch is computed at 3000 cm⁻¹. Roughly where is the C–D stretch?</p>
+      <div class="options"><button type="button">3000 cm⁻¹, since the force constant is the same</button><button type="button">About 2200 cm⁻¹</button><button type="button">About 1500 cm⁻¹</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["The force constant is the same, but the reduced mass nearly doubles, and frequency depends on both.","Correct. μ goes from about 0.92 to 1.72 amu, so ν̃ drops by √(0.92/1.72) ≈ 0.73: about 2200 cm⁻¹.","That would require the reduced mass to quadruple. Doubling the H mass roughly doubles μ, giving a factor near 1/√2.","ν̃ ∝ √(k/μ). k is unchanged (same surface), μ(C–H) ≈ 0.92 and μ(C–D) ≈ 1.72 amu, so the frequency falls by about 0.73, to roughly 2200 cm⁻¹."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">In what sense are the printed Cartesian displacement vectors of two different normal modes orthogonal?</p>
+      <div class="options"><button type="button">Their plain dot product is zero</button><button type="button">They are never orthogonal</button><button type="button">Their mass-weighted dot product, Σ mᵢ dᵢ d′ᵢ, is zero</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["That holds for the mass-weighted eigenvectors v, not for the Cartesian displacements d = M^−½ v.","They are orthogonal, but with the masses included.","Correct. The eigenvectors v are orthogonal; converting back with d = M^−½ v moves the masses into the inner product.","The eigenvectors of H_mw are orthogonal. Since d = M^−½ v, the equivalent statement for Cartesian displacements includes the masses: Σ mᵢ dᵢ d′ᵢ = 0."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="eigenvectors.html">← 1.9 Eigenvalues and eigenvectors</a>
+    <a href="imaginary-frequencies.html">1.11 Imaginary frequencies →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), ok: HN.css("--ok"), rule: HN.css("--rule"), sheet: HN.css("--sheet") });
+  let mo = 16, mc = 12, k = 16, sel = 2, noMW = false, modes = null;
+
+  function solve() {
+    const m = [mo, mc, mo];
+    const H = [[k, -k, 0], [-k, 2 * k, -k], [0, -k, k]];
+    let A;
+    if (noMW) A = H.map((r) => r.slice());
+    else A = H.map((r, i) => r.map((h, j) => h / Math.sqrt(m[i] * m[j])));
+    const e = HN.jacobi(A);
+    return e.l.map((l, n) => {
+      let v = e.v[n];
+      let d = noMW ? v.slice() : v.map((x, i) => x / Math.sqrt(m[i]));
+      const dn = Math.hypot(...d); d = d.map((x) => x / dn);
+      if (d.reduce((s, x) => s + x, 0) < -1e-9 || (Math.abs(d.reduce((s, x) => s + x, 0)) < 1e-9 && d[0] < 0)) { d = d.map((x) => -x); v = v.map((x) => -x); }
+      const lam = Math.abs(l) < 1e-9 ? 0 : l;
+      const nu = 1302.8 * Math.sqrt(Math.max(0, lam));
+      const com = (m[0] * d[0] + m[1] * d[1] + m[2] * d[2]) / (m[0] + m[1] + m[2]);
+      return { lam, nu, d, v, com };
+    });
+  }
+
+  const X0 = [-1.25, 0, 1.25];
+  let t = 0;
+  modes = solve();
+  const p = new HN.Plot(document.getElementById("c1"), {
+    xr: [-2.4, 2.4], yr: [-0.8, 0.8], aspect: 0.34, axes: false, pad: { l: 6, r: 6, t: 6, b: 6 },
+    draw(pl) {
+      const c = C(), g = pl.ctx, md = modes[sel], s = md.lam === 0 ? 0.32 : 0.32;
+      const phase = HN.reduce ? 0 : Math.sin(t * 2 * Math.PI / 1.4);
+      const pos = X0.map((x, i) => x + s * md.d[i] * phase);
+      X0.forEach((x) => pl.seg(x, -0.55, x, 0.55, c.rule, 1, [3, 3]));
+      for (let q = 0; q < 2; q++) {
+        const a = pos[q] + 0.22, b = pos[q + 1] - 0.22, n = 10, pts = [];
+        for (let i = 0; i <= n; i++) pts.push([a + ((b - a) * i) / n, i === 0 || i === n ? 0 : (i % 2 ? 0.1 : -0.1)]);
+        pl.path(pts, c.ink3, 1.6);
+      }
+      const ms = [mo, mc, mo];
+      pos.forEach((x, i) => {
+        const r = 9 + 5 * Math.cbrt(ms[i]);
+        g.beginPath(); g.arc(pl.X(x), pl.Y(0), r * pl.dpr, 0, 2 * Math.PI); g.fillStyle = i === 1 ? c.ink2 : c.mark; g.fill();
+        pl.text(HN.trim(ms[i], 1), x, 0, c.sheet, { align: "center", size: 10.5, weight: 600 });
+        if (Math.abs(md.d[i]) > 0.02) pl.arrow(X0[i], -0.5, X0[i] + md.d[i] * 0.9, -0.5, c.acc, 2.4);
+      });
+    },
+  });
+  const loop = HN.loop(document.getElementById("c1"), (tt) => { t = tt; p.render(); });
+
+  const tab = document.getElementById("tab"), note = document.getElementById("note");
+  const names = (m) => {
+    const d = m.d;
+    if (m.lam === 0) return "translation";
+    if (Math.abs(d[1]) < 0.02) return "symmetric stretch";
+    if (Math.sign(d[0]) === Math.sign(d[2]) && Math.sign(d[1]) !== Math.sign(d[0])) return "antisymmetric stretch";
+    return "mixed";
+  };
+  function upd() {
+    modes = solve();
+    tab.innerHTML = "<thead><tr><th>Mode</th><th>type</th><th>" + (noMW ? "eigenvalue of H" : "ω² (mdyn/Å/amu)") + "</th><th>ν̃ / cm⁻¹</th><th>d₁</th><th>d₂</th><th>d₃</th><th>centre-of-mass shift</th></tr></thead><tbody>" +
+      modes.map((m, n) => "<tr" + (n === sel ? ' class="hl"' : "") + "><td>" + (n + 1) + "</td><td>" + names(m) + "</td><td>" + HN.fmt(m.lam, 3) + "</td><td>" + (noMW ? "—" : HN.fmt(m.nu, 0)) + "</td><td>" + HN.fmt(m.d[0], 3) + "</td><td>" + HN.fmt(m.d[1], 3) + "</td><td>" + HN.fmt(m.d[2], 3) + "</td><td>" + HN.fmt(m.com, 3) + "</td></tr>").join("") + "</tbody>";
+    if (noMW) note.textContent = "Without mass weighting the eigenvectors depend only on the springs. The 'stretch' modes now move the centre of mass (nonzero shift), which a free molecule cannot do, and no frequency in cm⁻¹ can be assigned because the masses never entered.";
+    else {
+      const s = modes.find((m) => names(m) === "symmetric stretch"), a = modes.find((m) => names(m) === "antisymmetric stretch");
+      note.textContent = "Every vibrational mode keeps the centre of mass fixed (shift 0). " + (s && a ? "Symmetric stretch: 1302.8·√(k/m_end) = " + HN.fmt(s.nu, 0) + " cm⁻¹, independent of the centre mass. Antisymmetric: " + HN.fmt(a.nu, 0) + " cm⁻¹, which grows as the centre atom gets lighter." : "");
+    }
+    p.render();
+  }
+  const rmo = HN.range("mo", (v) => { mo = v; upd(); }, (v) => HN.fmt(v, 1) + " amu");
+  const rmc = HN.range("mc", (v) => { mc = v; upd(); }, (v) => HN.fmt(v, 1) + " amu");
+  const rk = HN.range("k", (v) => { k = v; upd(); }, (v) => HN.fmt(v, 1) + " mdyn/Å");
+  HN.seg(document.getElementById("mode"), (v) => { sel = +v; upd(); });
+  document.getElementById("nomw").addEventListener("change", (e) => { noMW = e.target.checked; upd(); });
+  const P = { co2: [16, 12], o18: [18, 12], heavy: [16, 40] };
+  document.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => { const [a, c] = P[b.dataset.p]; rmo.set(a); rmc.set(c); }));
+  rmo.fire(); rmc.fire(); rk.fire();
+  loop.start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Second Derivatives and Curvature</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.6</div>
+    <h1>Second derivatives and curvature</h1>
+    <p class="goal">Goal: understand why a zero gradient is not enough to identify a minimum, read the second derivative as curvature (a force constant), and see that in two or more dimensions the curvatures along the coordinate axes can be misleading.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Bending up or bending down</h2>
+    <p>At the bottom of a well and at the top of a barrier the slope is zero in both cases. What tells them apart is how the curve bends. The second derivative \(E''\) is the rate of change of the slope: positive when the curve bends upward like a cup, negative when it bends downward like a cap. Near any point, the curve looks like a parabola whose opening is set by \(E''\).</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Local parabola on a double well</b><span class="hint">Drag along the curve</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="An asymmetric double-well curve. At the chosen point a parabola with the same value, slope and second derivative is drawn, blue where the curve bends up and pink where it bends down. Regions of downward bending are shaded."></canvas>
+        <div class="legend"><span><i class="bg-ink"></i>E(x)</span><span><i class="bg-accent"></i>parabola, E″ &gt; 0</span><span><i class="bg-mark"></i>parabola, E″ &lt; 0</span></div>
+        <div class="btn-row" id="jumps"></div>
+        <div class="readout" id="o1"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Jump to the three stationary points. At both wells \(E' = 0\) and \(E'' &gt; 0\): minima. At the barrier top \(E' = 0\) and \(E'' &lt; 0\): a maximum. Between them are two inflection points where \(E'' = 0\) and the bending changes sign; the shaded region between them bends downward.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Classifying stationary points by hand</h2>
+    <ol class="work">
+      <li><div>Take \(E(x) = x^3 - 3x\). First derivative: \(E'(x) = 3x^2 - 3\), which is zero at \(x = 1\) and \(x = -1\). These are the stationary points.</div></li>
+      <li><div>Second derivative: \(E''(x) = 6x\). At \(x = 1\), \(E'' = 6 &gt; 0\): a minimum. At \(x = -1\), \(E'' = -6 &lt; 0\): a maximum.</div></li>
+      <li><div>Numerically, with values only, the central second difference is
+        \[ E''(x) \approx \frac{E(x+h) - 2E(x) + E(x-h)}{h^2} \]
+        At \(x = 1\), \(h = 0.1\): \(\dfrac{-1.969 - 2(-2) + (-1.971)}{0.01} = \dfrac{0.060}{0.01} = 6.0\).</div></li>
+      <li><div><b>Curvature is a force constant.</b> Near a minimum, \(E \approx E_0 + \tfrac12 k (x - x_0)^2\) with \(k = E''(x_0)\). For a Morse bond (lesson 1.3), \(k = 2D_e a^2 = 2 \times 120 \times 2.2^2 = 1162\) kcal/mol/Å², which is 8.07 mdyn/Å, typical of an O–H bond.</div></li>
+      <li><div>A force constant and a mass give a frequency. With \(k\) in mdyn/Å and the reduced mass \(\mu\) in amu,
+        \[ \tilde\nu = 1302.8\ \sqrt{k/\mu}\ \ \text{cm}^{-1}, \qquad \mu_\mathrm{OH} = \frac{16.00 \times 1.008}{17.01} = 0.948 \ \Rightarrow\ \tilde\nu = 1302.8\sqrt{8.07/0.948} \approx 3800\ \text{cm}^{-1} \]
+        The constant 1302.8 is \(\sqrt{(10^{2}\ \text{N/m})/(1\ \text{amu})}\,/\,(2\pi c)\) written in cm⁻¹.</div></li>
+    </ol>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Two dimensions: the trap</h3>
+    <p style="margin-top:8px">With two coordinates there are three second derivatives: \(E_{xx}\), \(E_{yy}\) and the mixed one \(E_{xy} = \partial^2 E/\partial x\,\partial y\) (which equals \(E_{yx}\) for smooth functions). Take \(E = x^2 + 4xy + y^2\):</p>
+    <div class="math">\[ E_{xx} = 2,\quad E_{yy} = 2,\quad E_{xy} = 4 \]</div>
+    <p>Both axis curvatures are positive, so it looks like a bowl. But along the diagonal \(y = -x\), \(E = x^2 - 4x^2 + x^2 = -2x^2\): downhill. The point is a saddle. The test that catches this uses the discriminant</p>
+    <div class="math">\[ D = E_{xx}E_{yy} - E_{xy}^2 = 4 - 16 = -12 &lt; 0 \ \Rightarrow\ \text{saddle} \]</div>
+    <p>\(D &gt; 0\) with \(E_{xx} &gt; 0\) is a minimum; \(D &gt; 0\) with \(E_{xx} &lt; 0\) is a maximum; \(D &lt; 0\) is a saddle.</p>
+
+    <div class="panel try-block" data-solution="E_xx = 6, E_yy = 4, E_xy = −2, so D = 6·4 − (−2)² = 20 > 0 with E_xx > 0: a minimum." data-hint="Not yet. Differentiate twice with respect to x for E_xx; once by x and once by y for E_xy; then D = E_xx·E_yy − E_xy².">
+      <div class="panel-head"><b>Your turn</b><span class="hint">E = 3x² − 2xy + 2y² at (0, 0)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">E_xx</label><input id="t1" data-ans="6" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">E_xy</label><input id="t2" data-ans="-2" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">D</label><input id="t3" data-ans="20" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Minima, transition states and hidden directions</h2>
+    <p>Play with the three second derivatives of a two-coordinate surface \(E = \tfrac12(E_{xx}x^2 + 2E_{xy}xy + E_{yy}y^2)\) and watch the shape change. Blue regions are above the stationary point, pink regions below it.</p>
+    <div class="panel">
+      <div class="panel-head"><b>Three second derivatives, one shape</b><span class="hint">Move the sliders or pick a preset</span></div>
+      <div class="panel-body">
+        <div class="seg" id="presets" role="group" aria-label="Presets">
+          <button type="button" data-v="bowl" aria-pressed="false">Minimum</button>
+          <button type="button" data-v="hill" aria-pressed="false">Maximum</button>
+          <button type="button" data-v="sad" aria-pressed="false">Saddle</button>
+          <button type="button" data-v="hidden" aria-pressed="true">Hidden saddle</button>
+        </div>
+        <canvas id="c2" class="plot" style="margin-top:12px" role="img" aria-label="Contour map of a quadratic surface. Blue areas are higher than the centre, pink areas lower. Dashed lines show the x and y axes through the stationary point."></canvas>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="a">E_xx</label><output id="a-v"></output></div><input id="a" type="range" min="-3" max="3" step="0.1" value="1"></div>
+          <div class="range"><div class="top"><label for="b">E_xy</label><output id="b-v"></output></div><input id="b" type="range" min="-3" max="3" step="0.1" value="2"></div>
+          <div class="range"><div class="top"><label for="c">E_yy</label><output id="c-v"></output></div><input id="c" type="range" min="-3" max="3" step="0.1" value="1"></div>
+        </div>
+        <div class="readout" id="o2"></div>
+      </div>
+    </div>
+    <ul style="margin-top:16px">
+      <li><b>A minimum</b> (a stable structure) has positive curvature in every direction.</li>
+      <li><b>A transition state</b> is a first-order saddle: positive curvature in every direction except exactly one, which runs along the reaction path.</li>
+      <li>In a molecule there are \(3N - 6\) directions and the mixed derivatives couple all of them, so the discriminant trick no longer applies. The general tool, which finds the "true" directions of curvature hidden by the coupling, is the eigenvalue analysis of lessons 1.8 and 1.9.</li>
+      <li>Curvature also explains the shape of bond potentials. A Morse curve has \(E'' &lt; 0\) beyond its inflection point at \(r = r_e + \ln 2/a\) (about 0.32 Å past equilibrium for the O–H model). A strongly stretched bond lies in a region of negative curvature, which is what eventually lets it break.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: where the test comes from, and why saddles must exist</summary>
+      <div>
+        <p><b>The discriminant is a determinant.</b> Collect the second derivatives in a symmetric table \(\begin{pmatrix} E_{xx} & E_{xy} \\ E_{xy} & E_{yy}\end{pmatrix}\): this is the 2×2 Hessian matrix, and \(D\) is its determinant. The determinant equals the product of the matrix's two eigenvalues (lesson 1.9), so \(D &lt; 0\) means one eigenvalue is positive and one negative: one uphill and one downhill direction.</p>
+        <p><b>Symmetry of mixed derivatives.</b> If \(E\) has continuous second derivatives, \(E_{xy} = E_{yx}\) (Schwarz's theorem). This is why every Hessian is symmetric. A numerically computed Hessian is slightly asymmetric because of noise, and programs symmetrize it by averaging \(H_{ij}\) and \(H_{ji}\).</p>
+        <p><b>Curvature versus second derivative.</b> The geometric curvature of a curve is \(\kappa = E''/(1 + E'^2)^{3/2}\). At stationary points \(E' = 0\) and the two agree, which is the only place chemists usually care about. Away from stationary points the second derivative still exists, but frequencies computed there are not meaningful (lesson 1.10).</p>
+        <p><b>Why transition states exist.</b> On a continuous surface with two separate minima, every path between them has a highest point, and the path whose highest point is lowest passes through a saddle point (the "mountain pass" theorem). Saddles are therefore guaranteed, not accidents. The one with the lowest highest point defines the barrier.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">In one dimension, a point has \(E' = 0\) and \(E'' &lt; 0\). What is it?</p>
+      <div class="options"><button type="button">A minimum</button><button type="button">A maximum</button><button type="button">An inflection point</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["A minimum needs the curve to bend upward, E″ &gt; 0.","Correct. Zero slope and downward bending: a local maximum.","An inflection point has E″ = 0, where the bending changes sign.","Zero slope means a stationary point. Negative E″ means the curve bends down like a cap, so it is a maximum."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">At a stationary point, \(E_{xx} = 3\), \(E_{yy} = 1\) and \(E_{xy} = 2\). What kind of point is it?</p>
+      <div class="options"><button type="button">A minimum, since both axis curvatures are positive</button><button type="button">A maximum</button><button type="button">A saddle point</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Positive axis curvatures are not enough. The mixed derivative can hide a downhill direction.","A maximum needs downward bending in every direction; E_xx is positive.","Correct. D = 3·1 − 2² = −1 &lt; 0, so there is a hidden downhill direction.","Compute D = E_xx·E_yy − E_xy² = 3 − 4 = −1. A negative D means a saddle, even though both axes curve up."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">The C≡O triple bond has a larger force constant than a C–O single bond. Which has the higher stretching frequency?</p>
+      <div class="options"><button type="button">C≡O</button><button type="button">C–O</button><button type="button">They are the same, since the atoms are the same</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Same reduced mass, larger curvature k, so higher ν̃ ∝ √(k/μ). Carbonyl and C≡O stretches appear far above C–O stretches.","A smaller force constant gives a lower frequency at the same reduced mass.","The masses are the same, but the curvature of the potential differs, and the frequency depends on both.","Frequency scales as √(k/μ). The reduced mass is the same, so the stiffer bond (larger k) vibrates faster: C≡O."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="gradients-forces.html">← 1.5 Gradients and forces</a>
+    <a href="taylor-quadratic.html">1.7 Taylor expansion →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), markW: HN.css("--mark-wash") });
+  /* ---------- 1D double well ---------- */
+  const E = (x) => x ** 4 - 2 * x * x + 0.3 * x;
+  const d1 = (x) => 4 * x ** 3 - 4 * x + 0.3;
+  const d2 = (x) => 12 * x * x - 4;
+  const roots = [];
+  for (let s = -2; s < 2; s += 0.01) if (d1(s) * d1(s + 0.01) <= 0) { let x = s + 0.005; for (let i = 0; i < 30; i++) x -= d1(x) / d2(x); roots.push(x); }
+  const infl = 1 / Math.sqrt(3);
+  let x0 = 0.45;
+
+  const p1 = new HN.Plot(document.getElementById("c1"), {
+    xr: [-1.7, 1.7], yr: [-1.6, 2.2], aspect: 0.6, xlabel: "x", ylabel: "E", xticks: 0.5, yticks: 0.5,
+    draw(p) {
+      const c = C(), g = p.ctx;
+      g.fillStyle = c.markW; g.globalAlpha = 0.7; g.fillRect(p.X(-infl), p.T, p.X(infl) - p.X(-infl), p.B - p.T); g.globalAlpha = 1;
+      p.text("E″ < 0", 0, 2.05, c.mark, { align: "center", size: 10.5 });
+      p.curve(E, c.ink, 2.4);
+      const e = E(x0), s = d1(x0), k = d2(x0);
+      p.curve((x) => e + s * (x - x0) + 0.5 * k * (x - x0) ** 2, k >= 0 ? c.acc : c.mark, 2, [6, 4], x0 - 0.8, x0 + 0.8);
+      p.dot(x0, e, c.ink, 5.5);
+    },
+  });
+  p1.drag((x, y, ph) => { if (ph === "up") return; x0 = Math.max(-1.6, Math.min(1.6, x)); u1(); });
+  const jumps = document.getElementById("jumps");
+  const names = ["left minimum", "barrier top", "right minimum"];
+  roots.forEach((r, i) => { const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "Go to " + names[i]; b.addEventListener("click", () => { x0 = r; u1(); }); jumps.appendChild(b); });
+  const o1 = document.getElementById("o1");
+  function u1() {
+    const s = d1(x0), k = d2(x0), stat = Math.abs(s) < 0.02;
+    let kind = stat ? (k > 0 ? '<span class="status min">minimum</span>' : '<span class="status ts">maximum</span>') : Math.abs(k) < 0.15 ? '<span class="status">near inflection</span>' : '<span class="status">not stationary</span>';
+    o1.innerHTML = '<div><span class="label">Slope E′</span><div class="val">' + HN.fmt(s, 3) + '</div></div>' +
+      '<div><span class="label">Curvature E″</span><div class="val">' + HN.fmt(k, 3) + '</div><div class="hint">' + (k > 0 ? "bends up" : k < 0 ? "bends down" : "flat") + '</div></div>' +
+      '<div><span class="label">Point type</span><div class="val" style="margin-top:8px">' + kind + '</div></div>';
+    p1.render();
+  }
+  u1();
+
+  /* ---------- 2D quadratic form ---------- */
+  let A = 1, B = 2, Cc = 1;
+  const Q = (x, y) => 0.5 * (A * x * x + 2 * B * x * y + Cc * y * y);
+  const p2 = new HN.Plot(document.getElementById("c2"), {
+    xr: [-2, 2], yr: [-1.4, 1.4], equal: true, aspect: 0.62, xlabel: "x", ylabel: "y",
+    field: Q, fieldOpts: { mode: "div", step: 0.35 },
+    draw(p) {
+      const c = C();
+      p.seg(-3, 0, 3, 0, c.ink3, 1.2, [5, 5]); p.seg(0, -3, 0, 3, c.ink3, 1.2, [5, 5]);
+      p.dot(0, 0, c.ink, 4.5);
+    },
+  });
+  const o2 = document.getElementById("o2");
+  function u2() {
+    p2.o.field = Q; p2.invalidate(); p2.render();
+    const D = A * Cc - B * B;
+    let kind;
+    if (Math.abs(D) < 1e-9) kind = '<span class="status">degenerate (D = 0)</span>';
+    else if (D < 0) kind = '<span class="status ts">saddle point</span>';
+    else kind = A > 0 ? '<span class="status min">minimum</span>' : '<span class="status ts">maximum</span>';
+    const trap = D < 0 && A > 0 && Cc > 0 ? '<div class="hint">Both axes curve up, yet it is a saddle.</div>' : "";
+    o2.innerHTML = '<div><span class="label">Discriminant</span><div class="val">D = ' + HN.fmt(A, 1) + '·' + HN.fmt(Cc, 1) + ' − ' + HN.fmt(B, 1) + '²<br>= ' + HN.fmt(D, 2) + '</div></div>' +
+      '<div><span class="label">Point type</span><div class="val" style="margin-top:8px">' + kind + '</div>' + trap + '</div>';
+  }
+  const ra = HN.range("a", (v) => { A = v; u2(); }, (v) => HN.fmt(v, 1));
+  const rb = HN.range("b", (v) => { B = v; u2(); }, (v) => HN.fmt(v, 1));
+  const rc = HN.range("c", (v) => { Cc = v; u2(); }, (v) => HN.fmt(v, 1));
+  const P = { bowl: [2, 0.5, 1.5], hill: [-2, 0.5, -1.5], sad: [2, 0, -1.5], hidden: [1, 2, 1] };
+  HN.seg(document.getElementById("presets"), (v) => { const [a, b, c] = P[v]; ra.set(a); rb.set(b); rc.set(c); });
+  ra.fire(); rb.fire(); rc.fire();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matrices and the Hessian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  .blocks { display: grid; grid-template-columns: 2.2rem repeat(9, minmax(1.6rem, 1fr)); gap: 2px; margin-top: 12px; font: 500 0.6875rem/1 var(--f-mono); min-width: 22rem; }
+  .blocks div { padding: 7px 2px; text-align: center; border-radius: 2px; }
+  .blocks .h { color: var(--ink-3); background: transparent; }
+  .blocks .d { background: var(--accent-wash); color: var(--accent); }
+  .blocks .o { background: var(--wash); color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.8</div>
+    <h1>Matrices and matrix–vector products</h1>
+    <p class="goal">Goal: see a matrix as a machine that turns one vector into another, read its columns, and understand the Hessian as the matrix that turns a displacement into the change of force it causes.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>A matrix moves every vector</h2>
+    <p>A 2×2 matrix \(\mathbf A\) takes any vector \(\mathbf v\) and produces a new vector \(\mathbf A\mathbf v\). Applied to every point at once, it stretches, rotates or shears the whole plane. The faint grid below shows where the original square grid ends up; the pink curve shows where the unit circle goes.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>A matrix acting on the plane</b><span class="hint">Drag the dark vector v</span></div>
+      <div class="panel-body">
+        <div class="seg" id="presets" role="group" aria-label="Preset matrices">
+          <button type="button" data-v="id" aria-pressed="false">Identity</button>
+          <button type="button" data-v="stretch" aria-pressed="false">Stretch</button>
+          <button type="button" data-v="rot" aria-pressed="false">Rotation</button>
+          <button type="button" data-v="shear" aria-pressed="false">Shear</button>
+          <button type="button" data-v="sym" aria-pressed="true">Symmetric</button>
+        </div>
+        <canvas id="c1" class="plot" style="margin-top:12px" role="img" aria-label="The plane transformed by a 2 by 2 matrix: the transformed grid, the image of the unit circle, the images of the two basis vectors, and a chosen vector v with its image A v."></canvas>
+        <div class="legend"><span><i class="bg-accent"></i>A e₁ (column 1)</span><span><i class="bg-ok"></i>A e₂ (column 2)</span><span><i class="bg-ink"></i>v</span><span><i class="bg-mark"></i>A v</span></div>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="m11">A₁₁</label><output id="m11-v"></output></div><input id="m11" type="range" min="-2" max="2" step="0.1" value="1.5"></div>
+          <div class="range"><div class="top"><label for="m12">A₁₂</label><output id="m12-v"></output></div><input id="m12" type="range" min="-2" max="2" step="0.1" value="0.5"></div>
+          <div class="range"><div class="top"><label for="m21">A₂₁</label><output id="m21-v"></output></div><input id="m21" type="range" min="-2" max="2" step="0.1" value="0.5"></div>
+          <div class="range"><div class="top"><label for="m22">A₂₂</label><output id="m22-v"></output></div><input id="m22" type="range" min="-2" max="2" step="0.1" value="1"></div>
+        </div>
+        <div class="readout" id="o1"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">The most useful fact on this page: the blue arrow is the first column of the matrix and the green arrow is the second. A matrix is completely described by where it sends the two basis vectors \(\mathbf e_1 = (1, 0)\) and \(\mathbf e_2 = (0, 1)\). Everything else follows, because any \(\mathbf v = v_1\mathbf e_1 + v_2\mathbf e_2\) goes to \(v_1(\text{column 1}) + v_2(\text{column 2})\).</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Matrix times vector, by hand</h2>
+    <p>Take a symmetric matrix, the kind every Hessian is, and a displacement:</p>
+    <div class="math">\[ \mathbf H = \begin{pmatrix} 2 & 1 \\ 1 & 3 \end{pmatrix}, \qquad \Delta\mathbf x = \begin{pmatrix} 1 \\ -1 \end{pmatrix} \]</div>
+    <ol class="work">
+      <li><div><b>Row times column.</b> Each output component is the dot product (lesson 1.2) of one row with the vector:
+        \[ \mathbf H\Delta\mathbf x = \begin{pmatrix} 2\cdot 1 + 1\cdot(-1) \\ 1\cdot 1 + 3\cdot(-1) \end{pmatrix} = \begin{pmatrix} 1 \\ -2 \end{pmatrix} \]</div></li>
+      <li><div><b>Or columns.</b> The same result as a combination of columns: \(1\cdot\begin{pmatrix}2\\1\end{pmatrix} + (-1)\cdot\begin{pmatrix}1\\3\end{pmatrix} = \begin{pmatrix}1\\-2\end{pmatrix}\).</div></li>
+      <li><div><b>A number from a matrix.</b> The quadratic energy of lesson 1.7 is a dot product of \(\Delta\mathbf x\) with \(\mathbf H\Delta\mathbf x\):
+        \[ \tfrac12\,\Delta\mathbf x^{\mathsf T}\mathbf H\,\Delta\mathbf x = \tfrac12\,(1,\ -1)\cdot(1,\ -2) = \tfrac12\,(1 + 2) = 1.5 \]
+        Here \(\Delta\mathbf x^{\mathsf T}\) (the transpose) is the same numbers written as a row.</div></li>
+      <li><div><b>Symmetric</b> means \(H_{ij} = H_{ji}\): the matrix equals its own transpose. For a Hessian this is the equality of mixed derivatives from lesson 1.6.</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> \(\mathbf H\Delta\mathbf x\) is a vector (how the gradient changes); \(\Delta\mathbf x^{\mathsf T}\mathbf H\Delta\mathbf x\) is a number (twice the energy change of the quadratic model).</div>
+
+    <div class="panel try-block" data-solution="HΔx = (4·2 + (−1)·1, (−1)·2 + 2·1) = (7, 0). Then ½ΔxᵀHΔx = ½(2·7 + 1·0) = 7." data-hint="Not yet. Row 1 of H dotted with Δx gives the first component, row 2 the second. Then dot Δx with the result and halve it.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">H = [[4, −1], [−1, 2]], Δx = (2, 1)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">(HΔx)₁</label><input id="t1" data-ans="7" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">(HΔx)₂</label><input id="t2" data-ans="0" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">½ ΔxᵀHΔx</label><input id="t3" data-ans="7" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>The Hessian as a force-constant matrix</h2>
+    <p>For a molecule, the Hessian collects every second derivative of the energy with respect to the \(3N\) Cartesian coordinates:</p>
+    <div class="math">\[ H_{ij} = \frac{\partial^2 E}{\partial x_i\,\partial x_j}, \qquad \mathbf H \text{ is } 3N \times 3N \]</div>
+    <p>Near a minimum the gradient is zero, and expanding it to first order gives a many-atom Hooke's law:</p>
+    <div class="math">\[ \mathbf g(\mathbf x_0 + \Delta\mathbf x) \approx \mathbf H\,\Delta\mathbf x \qquad\Longrightarrow\qquad \mathbf F \approx -\mathbf H\,\Delta\mathbf x \]</div>
+    <p>So \(H_{ij}\) answers: if I move coordinate \(j\) by one unit, how much force appears on coordinate \(i\)? Column \(j\) is the full force pattern caused by moving coordinate \(j\) alone. Try it on a linear triatomic held together by two identical springs.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>One column of the Hessian = one displacement</b><span class="hint">Choose which atom to push</span></div>
+      <div class="panel-body">
+        <div class="seg" id="which" role="group" aria-label="Atom to displace">
+          <button type="button" data-v="0" aria-pressed="true">Move atom 1</button>
+          <button type="button" data-v="1" aria-pressed="false">Move atom 2</button>
+          <button type="button" data-v="2" aria-pressed="false">Move atom 3</button>
+          <button type="button" data-v="all" aria-pressed="false">Move all three</button>
+        </div>
+        <canvas id="c2" class="plot" style="margin-top:12px" role="img" aria-label="Three atoms on a line joined by springs. One atom is displaced to the right, and arrows show the restoring forces on all three atoms."></canvas>
+        <div class="readout" id="o2"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Push atom 1: it feels a pull back, atom 2 feels a pull forward, and atom 3 feels nothing, because no spring connects them. That is column 1 of the matrix. Now press "move all three": every force vanishes. Moving the whole molecule costs no energy, so every row of the Hessian adds up to zero. This is the matrix version of the zero-net-force rule from lesson 1.5.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">How a numerical Hessian is built</h3>
+    <p style="margin-top:8px">The column picture is literally the algorithm. To compute column \(j\), displace coordinate \(j\) by \(\pm h\), compute analytical gradients at both geometries, and difference them:</p>
+    <div class="math">\[ H_{ij} \approx \frac{g_i(\mathbf x_0 + h\,\mathbf e_j) - g_i(\mathbf x_0 - h\,\mathbf e_j)}{2h} \]</div>
+    <p>Repeating for all \(3N\) coordinates gives the full matrix from \(6N\) gradient calculations, which is why numerical frequency jobs print a long list of displaced geometries.</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">The structure of a molecular Hessian</h3>
+    <p style="margin-top:8px">For water the Hessian is 9 × 9. It splits naturally into 3 × 3 blocks, one for each pair of atoms. Diagonal blocks describe how an atom's own force changes when it moves; off-diagonal blocks describe how moving one atom pushes on another.</p>
+    <div class="scroll">
+      <div class="blocks" aria-label="9 by 9 Hessian of water divided into 3 by 3 blocks">
+        <div class="h"></div><div class="h">xO</div><div class="h">yO</div><div class="h">zO</div><div class="h">xH₁</div><div class="h">yH₁</div><div class="h">zH₁</div><div class="h">xH₂</div><div class="h">yH₂</div><div class="h">zH₂</div>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:8px">Shaded blue: the self blocks O–O, H₁–H₁, H₂–H₂. Grey: the coupling blocks. The matrix is symmetric across its diagonal.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: units, solving instead of inverting, and the secant condition</summary>
+      <div>
+        <p><b>Units.</b> Hessian elements are energy per length squared. Programs store Hartree/Bohr²; 1 Hartree/Bohr² = 1556.9 N/m = 15.569 mdyn/Å. A typical bond-stretch force constant of 5 mdyn/Å is therefore about 0.32 Hartree/Bohr².</p>
+        <p><b>Determinant.</b> The determinant of a 2×2 matrix is the factor by which it scales areas (the unit square becomes a parallelogram of area \(\det\mathbf A\)). A zero determinant squashes the plane onto a line, and the matrix has no inverse. Because every row of a free molecule's Cartesian Hessian sums to zero, its determinant is exactly zero: it cannot be inverted until translations and rotations are removed.</p>
+        <p><b>Solving, not inverting.</b> The Newton step \(\Delta\mathbf x = -\mathbf H^{-1}\mathbf g\) is computed by solving the linear system \(\mathbf H\Delta\mathbf x = -\mathbf g\), usually via a factorization or an eigen-decomposition. Forming \(\mathbf H^{-1}\) explicitly is slower and less accurate.</p>
+        <p><b>The secant condition.</b> From \(\Delta\mathbf g \approx \mathbf H\Delta\mathbf x\), two successive optimization steps tell you how the Hessian acts along the step direction without computing it. Quasi-Newton methods such as BFGS update an approximate Hessian so that \(\mathbf H_\text{new}\Delta\mathbf x = \Delta\mathbf g\) holds exactly after every step (lesson 2.1).</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">What is the first column of a matrix \(\mathbf A\)?</p>
+      <div class="options"><button type="button">The vector A sends \(\mathbf e_1 = (1, 0)\) to</button><button type="button">The largest entries of A</button><button type="button">The vector that A leaves unchanged</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. A·(1, 0) picks out exactly the first column, and A·(0, 1) the second.","Columns are fixed by position, not by size.","Vectors that A only stretches are eigenvectors (lesson 1.9), a different idea.","Multiply A by (1, 0): each row contributes only its first entry, so the result is the first column. Columns are the images of the basis vectors."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">In a Cartesian Hessian, what does the element \(H_{ij}\) tell you physically?</p>
+      <div class="options"><button type="button">The energy of atom i</button><button type="button">How much the force on coordinate i changes when coordinate j moves</button><button type="button">The distance between atoms i and j</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["E is one number for the whole molecule; Hessian elements are its second derivatives.","Correct. H_ij = ∂g_i/∂x_j, so −H_ij is the force appearing on i per unit displacement of j.","Distances enter E, but the Hessian measures how forces respond to displacements.","H_ij = ∂²E/∂x_i∂x_j = ∂g_i/∂x_j. It is the change in the gradient (force with a minus sign) on coordinate i per unit move of coordinate j."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Why does each row of a free molecule's Cartesian Hessian sum to zero (over the x-, y- or z-components)?</p>
+      <div class="options"><button type="button">Hessians are always normalized that way</button><button type="button">Because the matrix is symmetric</button><button type="button">Translating the whole molecule creates no forces</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["There is no normalization; it follows from physics.","Symmetry means H_ij = H_ji. It does not by itself force rows to sum to zero.","Correct. Displacing every atom by the same amount is a translation; H times that displacement must give zero force, which is exactly the row sum.","Move all atoms by the same small amount in x. The energy does not change, so no forces appear: H·(1, 0, 0, 1, 0, 0, …) = 0. Each component of that product is a row sum."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="taylor-quadratic.html">← 1.7 Taylor expansion</a>
+    <a href="eigenvectors.html">1.9 Eigenvalues and eigenvectors →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark"), ok: HN.css("--ok"), rule: HN.css("--rule"), sheet: HN.css("--sheet") });
+  let M = [[1.5, 0.5], [0.5, 1]], v = [1, 1];
+  const mul = (m, u) => [m[0][0] * u[0] + m[0][1] * u[1], m[1][0] * u[0] + m[1][1] * u[1]];
+  const p1 = new HN.Plot(document.getElementById("c1"), {
+    xr: [-3.2, 3.2], yr: [-2.2, 2.2], equal: true, aspect: 0.68, xticks: 1, yticks: 1, grid: false,
+    draw(p) {
+      const c = C();
+      // original grid
+      for (let k = -6; k <= 6; k++) { p.seg(k, -6, k, 6, c.rule, 1); p.seg(-6, k, 6, k, c.rule, 1); }
+      // transformed grid
+      for (let k = -4; k <= 4; k++) {
+        const a = mul(M, [k, -4]), b = mul(M, [k, 4]), d = mul(M, [-4, k]), e = mul(M, [4, k]);
+        p.seg(a[0], a[1], b[0], b[1], c.ink3, 0.8); p.seg(d[0], d[1], e[0], e[1], c.ink3, 0.8);
+      }
+      const circ = [], img = [];
+      for (let i = 0; i <= 120; i++) { const t = (i / 120) * 2 * Math.PI, u = [Math.cos(t), Math.sin(t)]; circ.push(u); img.push(mul(M, u)); }
+      p.path(circ, c.ink3, 1.2, [3, 4]);
+      p.path(img, c.mark, 2);
+      p.arrow(0, 0, M[0][0], M[1][0], c.acc, 3);
+      p.arrow(0, 0, M[0][1], M[1][1], c.ok, 3);
+      const av = mul(M, v);
+      p.arrow(0, 0, v[0], v[1], c.ink, 2.6);
+      p.arrow(0, 0, av[0], av[1], c.mark, 2.6);
+      p.text("v", v[0], v[1], c.ink, { dx: 6, dy: -8 });
+      p.text("Av", av[0], av[1], c.mark, { dx: 6, dy: -8 });
+    },
+  });
+  p1.drag((x, y, ph) => { if (ph === "up") return; v = [Math.round(x * 4) / 4, Math.round(y * 4) / 4]; u1(); });
+  const o1 = document.getElementById("o1");
+  o1.innerHTML = '<div><span class="label">Matrix</span><div class="mjx" id="o1m"></div></div><div><span class="label">A v</span><div class="mjx" id="o1v"></div></div><div><span class="label">Determinant</span><div class="val" id="o1d"></div><div class="hint">area scale factor</div></div>';
+  function u1() {
+    HN.setTex(document.getElementById("o1m"), "\\(\\mathbf A = \\begin{pmatrix} " + HN.tex(M[0][0], 1) + " & " + HN.tex(M[0][1], 1) + " \\\\ " + HN.tex(M[1][0], 1) + " & " + HN.tex(M[1][1], 1) + " \\end{pmatrix}\\)");
+    const av = mul(M, v);
+    HN.setTex(document.getElementById("o1v"), "\\(\\begin{pmatrix} " + HN.tex(M[0][0], 1) + " & " + HN.tex(M[0][1], 1) + " \\\\ " + HN.tex(M[1][0], 1) + " & " + HN.tex(M[1][1], 1) + " \\end{pmatrix}\\begin{pmatrix} " + HN.tex(v[0]) + " \\\\ " + HN.tex(v[1]) + " \\end{pmatrix} = \\begin{pmatrix} " + HN.tex(av[0]) + " \\\\ " + HN.tex(av[1]) + " \\end{pmatrix}\\)");
+    document.getElementById("o1d").textContent = HN.fmt(M[0][0] * M[1][1] - M[0][1] * M[1][0], 2);
+    p1.render();
+  }
+  const R = [["m11", 0, 0], ["m12", 0, 1], ["m21", 1, 0], ["m22", 1, 1]].map(([id, i, j]) => HN.range(id, (val) => { M[i][j] = val; u1(); }, (val) => HN.fmt(val, 1)));
+  const c30 = Math.cos(Math.PI / 6), s30 = Math.sin(Math.PI / 6);
+  const P = { id: [1, 0, 0, 1], stretch: [1.8, 0, 0, 0.6], rot: [c30, -s30, s30, c30], shear: [1, 1, 0, 1], sym: [1.5, 0.5, 0.5, 1] };
+  HN.seg(document.getElementById("presets"), (k) => { P[k].forEach((val, n) => { R[n].el.value = val; M[n >> 1][n & 1] = val; R[n].fire(); }); });
+  R.forEach((r) => r.fire());
+
+  /* ---------- linear triatomic: columns of the Hessian ---------- */
+  const k = 1, H = [[k, -k, 0], [-k, 2 * k, -k], [0, -k, k]];
+  let which = "0";
+  const X0 = [-1.6, 0, 1.6], amp = 0.35;
+  const p2 = new HN.Plot(document.getElementById("c2"), {
+    xr: [-2.6, 2.6], yr: [-0.9, 0.9], aspect: 0.36, axes: false, pad: { l: 6, r: 6, t: 6, b: 6 },
+    draw(p) {
+      const c = C(), g = p.ctx;
+      const d = which === "all" ? [amp, amp, amp] : [0, 1, 2].map((i) => (String(i) === which ? amp : 0));
+      const pos = X0.map((x, i) => x + d[i]);
+      // springs as zig-zags
+      for (let s = 0; s < 2; s++) {
+        const a = pos[s] + 0.2, b = pos[s + 1] - 0.2, n = 10, pts = [];
+        for (let i = 0; i <= n; i++) pts.push([a + ((b - a) * i) / n, i === 0 || i === n ? 0 : (i % 2 ? 0.12 : -0.12)]);
+        p.path(pts, c.ink3, 1.6);
+      }
+      X0.forEach((x) => p.seg(x, -0.5, x, 0.5, c.rule, 1, [3, 3]));
+      const f = [0, 1, 2].map((i) => -(H[i][0] * d[0] + H[i][1] * d[1] + H[i][2] * d[2]));
+      pos.forEach((x, i) => {
+        g.beginPath(); g.arc(p.X(x), p.Y(0), 15 * p.dpr, 0, 2 * Math.PI); g.fillStyle = c.sheet; g.fill(); g.strokeStyle = c.ink2; g.lineWidth = 2 * p.dpr; g.stroke();
+        p.text(String(i + 1), x, 0, c.ink, { align: "center", weight: 600 });
+        if (Math.abs(f[i]) > 1e-9) p.arrow(x, -0.42, x + f[i] * 2.2, -0.42, c.mark, 2.6);
+      });
+    },
+  });
+  const o2 = document.getElementById("o2");
+  o2.innerHTML = '<div><span class="label">Hessian (units of k)</span><div class="mjx" id="o2h"></div></div><div><span class="label">Forces F = −H Δx</span><div class="mjx" id="o2f"></div></div>';
+  function u2() {
+    const d = which === "all" ? [1, 1, 1] : [0, 1, 2].map((i) => (String(i) === which ? 1 : 0));
+    const col = which === "all" ? -1 : +which;
+    const cell = (i, j) => (j === col ? "\\color{#b5466f}{" + H[i][j] + "}" : String(H[i][j]));
+    HN.setTex(document.getElementById("o2h"), "\\(\\begin{pmatrix} " + [0, 1, 2].map((i) => [0, 1, 2].map((j) => cell(i, j)).join(" & ")).join(" \\\\ ") + " \\end{pmatrix}\\)");
+    const f = [0, 1, 2].map((i) => -(H[i][0] * d[0] + H[i][1] * d[1] + H[i][2] * d[2]));
+    HN.setTex(document.getElementById("o2f"), "\\(\\Delta\\mathbf x = h\\begin{pmatrix} " + d.join(" \\\\ ") + " \\end{pmatrix} \\Rightarrow \\mathbf F = h\\begin{pmatrix} " + f.map((x) => HN.tex(x)).join(" \\\\ ") + " \\end{pmatrix}\\)");
+    p2.render();
+  }
+  HN.seg(document.getElementById("which"), (val) => { which = val; u2(); });
+  u2();
+
+  /* ---------- 9×9 block diagram ---------- */
+  const blocks = document.querySelector(".blocks"), lab = ["xO", "yO", "zO", "xH₁", "yH₁", "zH₁", "xH₂", "yH₂", "zH₂"];
+  let html = "";
+  for (let i = 0; i < 9; i++) { html += '<div class="h">' + lab[i] + "</div>"; for (let j = 0; j < 9; j++) html += '<div class="' + ((i / 3 | 0) === (j / 3 | 0) ? "d" : "o") + '">' + (i === j ? "●" : "") + "</div>"; }
+  blocks.insertAdjacentHTML("beforeend", html);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gradients and Forces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.5</div>
+    <h1>Gradients and forces</h1>
+    <p class="goal">Goal: collect all partial derivatives into one vector, see that it points straight uphill and perpendicular to contour lines, and understand why the force on the atoms is \(\mathbf F = -\nabla E\).</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>The arrow that points uphill</h2>
+    <p>At any point of a surface you can compute one partial derivative per coordinate. Stacked into a column, they form the <b>gradient</b> \(\nabla E\). It is a vector, so it has a direction and a length, and both have a meaning: it points in the direction of steepest increase, and its length is how steep that is. The force is the same arrow reversed.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Gradient and force on a 2D surface</b><span class="hint">Drag the point</span></div>
+      <div class="panel-body">
+        <canvas id="map" class="plot" role="img" aria-label="Contour map with two minima and a saddle. At the chosen point, a dark arrow shows the gradient pointing uphill, a pink arrow shows the force pointing downhill, and a short line shows the local contour direction, perpendicular to both."></canvas>
+        <div class="legend"><span><i class="bg-ink"></i>gradient ∇E (uphill)</span><span><i class="bg-mark"></i>force −∇E (downhill)</span><span><i class="bg-ink3"></i>contour direction</span></div>
+        <div class="btn-row">
+          <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="field"> Show forces everywhere</label>
+        </div>
+        <div class="readout" id="out"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Move the point around and check three facts. The arrows are always perpendicular to the contour line through the point. They are long where contours are crowded and short where they are sparse. And at the bottom of each well and at the pass between them, the arrows shrink to nothing: the gradient is zero at every stationary point.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Gradient, force and one downhill step</h2>
+    <p>Take the simple bowl \(E(x, y) = x^2 + 3y^2\) at the point \((1,\ 1)\).</p>
+    <ol class="work">
+      <li><div>Partial derivatives (lesson 1.4), stacked into a column:
+        \[ \nabla E = \begin{pmatrix} \partial E/\partial x \\ \partial E/\partial y \end{pmatrix} = \begin{pmatrix} 2x \\ 6y \end{pmatrix} = \begin{pmatrix} 2 \\ 6 \end{pmatrix} \]</div></li>
+      <li><div>Its length is the steepest slope available from this point:
+        \[ |\nabla E| = \sqrt{2^2 + 6^2} = \sqrt{40} \approx 6.32 \]</div></li>
+      <li><div>The <b>directional derivative</b>, the slope along any unit direction \(\hat{\mathbf u}\), is a dot product (lesson 1.2): \(D_{\hat{\mathbf u}}E = \nabla E\cdot\hat{\mathbf u}\). Along \(x\), \(\hat{\mathbf u} = (1, 0)\), the slope is 2. Since \(\nabla E\cdot\hat{\mathbf u} = |\nabla E|\cos\theta\), it is largest (6.32) when \(\hat{\mathbf u}\) points along the gradient, and zero when \(\hat{\mathbf u}\) is perpendicular to it. Zero slope means walking along a contour line: that is why the gradient is perpendicular to contours.</div></li>
+      <li><div>The force is the negative gradient: \(\mathbf F = -\nabla E = (-2,\ -6)\). It points straight downhill.</div></li>
+      <li><div>One <b>steepest-descent step</b> moves along the force with a step factor \(\alpha = 0.1\):
+        \[ \begin{pmatrix} x \\ y \end{pmatrix}_{\text{new}} = \begin{pmatrix} 1 \\ 1 \end{pmatrix} + 0.1\begin{pmatrix} -2 \\ -6 \end{pmatrix} = \begin{pmatrix} 0.8 \\ 0.4 \end{pmatrix}, \qquad E: 4.00 \to 0.64 + 0.48 = 1.12 \]
+        A second step gives \((0.64,\ 0.16)\) and \(E = 0.49\). This is the simplest possible optimizer.</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> The gradient tells you which way is uphill and how steep it is, using only first derivatives at the current point. No map of the surface is needed.</div>
+
+    <div class="panel try-block" data-solution="∂E/∂x = 4x − y = 2, ∂E/∂y = 2y − x = 3, so ∇E = (2, 3), F = (−2, −3), and |∇E| = √13 ≈ 3.606." data-hint="Not yet. Differentiate each term, treating the other variable as a constant; then flip both signs for the force.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">E = 2x² + y² − xy at (1, 2)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">Fₓ</label><input id="t1" data-ans="-2" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">F_y</label><input id="t2" data-ans="-3" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">|∇E|</label><input id="t3" data-ans="3.606" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Forces in optimizations and dynamics</h2>
+    <p>For a molecule the gradient has \(3N\) components, three per atom. Reading it three at a time gives the force on each atom:</p>
+    <div class="math">\[ \mathbf F_A = -\begin{pmatrix} \partial E/\partial x_A \\ \partial E/\partial y_A \\ \partial E/\partial z_A \end{pmatrix}, \qquad A = 1, \dots, N \]</div>
+    <ul>
+      <li><b>Geometry optimization</b> moves atoms along their forces (with cleverer step choices, lesson 2.1) until every force is close to zero. The convergence test reports the max and RMS of exactly this vector.</li>
+      <li><b>Molecular dynamics</b> feeds the same forces into Newton's law, \(m_A\ddot{\mathbf r}_A = \mathbf F_A\), to move atoms in time.</li>
+      <li><b>A free sanity check.</b> Moving the whole molecule cannot change its energy, so the forces must add up to zero: \(\sum_A \mathbf F_A = \mathbf 0\) (and likewise for torques). A clearly nonzero sum in an output, without an external field, points to an inconsistent or poorly converged calculation.</li>
+    </ul>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Steepest descent, step by step</h3>
+    <p style="margin-top:8px">Run the simplest optimizer on the surface from Step 1. Each step moves by \(\alpha\) times the force.</p>
+    <div class="panel">
+      <div class="panel-head"><b>Steepest descent</b><span class="hint">Drag to choose the start</span></div>
+      <div class="panel-body">
+        <canvas id="sd" class="plot" role="img" aria-label="Contour map with the path of steepest-descent steps from a chosen starting point to a minimum. With a large step factor the path zig-zags across the narrow valley."></canvas>
+        <div class="controls"><div class="range"><div class="top"><label for="alpha">step factor α</label><output id="alpha-v"></output></div><input id="alpha" type="range" min="0.02" max="0.3" step="0.01" value="0.12"></div></div>
+        <div class="readout" id="sdout"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Increase \(\alpha\) and the path starts to zig-zag across the valley. The gradient points across the narrow valley much more than along it, so a long step overshoots to the opposite wall. Too large an \(\alpha\) and it never settles. This weakness is why real optimizers also use second-derivative information (lessons 1.7 and 2.1).</p>
+
+    <h3 style="font-size:var(--s-1);margin-top:24px">Comparing convergence thresholds</h3>
+    <p style="margin-top:8px">Programs state gradient thresholds in different units. Gaussian's default maximum force is \(4.5\times10^{-4}\) Hartree/Bohr, which is \(4.5\times10^{-4}\times 1.8897 = 8.5\times10^{-4}\) Hartree/Å. AMS states its gradient criterion in Hartree/Å (its documented default is \(10^{-3}\)). Convert before comparing, and check your version's documentation for the exact definitions.</p>
+
+    <details class="deeper">
+      <summary>Going deeper: why the gradient behaves this way</summary>
+      <div>
+        <p><b>Linear approximation.</b> Near a point \(\mathbf x\), \(E(\mathbf x + \Delta\mathbf x) \approx E(\mathbf x) + \nabla E\cdot\Delta\mathbf x\). The gradient is the vector that turns any small displacement into the energy change it causes. Lesson 1.7 extends this to second order.</p>
+        <p><b>Zero net force, derived.</b> Translational invariance means \(E(\mathbf R + \mathbf t) = E(\mathbf R)\) for a uniform shift \(\mathbf t\) of all atoms. Differentiating with respect to \(t_x\) at \(\mathbf t = 0\) gives \(\sum_A \partial E/\partial x_A = 0\). The same argument with rotations gives zero net torque. These 6 conditions are why the gradient effectively lives in \(3N-6\) dimensions.</p>
+        <p><b>"Steepest" depends on how you measure distance.</b> Steepest descent assumes every coordinate counts equally. If distances are measured with masses (\(\sqrt{m}\,\Delta x\)), the steepest-descent path changes. The intrinsic reaction coordinate is precisely the steepest-descent path in mass-weighted coordinates (lesson 2.5).</p>
+        <p><b>Speed of steepest descent.</b> Near a minimum with largest and smallest curvatures \(\lambda_\max\) and \(\lambda_\min\), the best fixed-step steepest descent reduces the error by a factor of about \((\kappa - 1)/(\kappa + 1)\) per step, where \(\kappa = \lambda_\max/\lambda_\min\) is the condition number. Floppy molecules have tiny \(\lambda_\min\) (soft torsions next to stiff bonds), so \(\kappa\) is huge and steepest descent crawls. Curvatures as eigenvalues are the subject of lesson 1.9.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">At a point on a contour map, how is the force oriented relative to the contour line through that point?</p>
+      <div class="options"><button type="button">Perpendicular to it, pointing downhill</button><button type="button">Along the contour line</button><button type="button">Perpendicular to it, pointing uphill</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Along a contour the energy does not change, so the gradient has no component there. The force is −∇E, so it points to lower energy.","Moving along a contour line keeps the energy constant, which means zero force in that direction.","That is the gradient, ∇E. The force is its negative.","The slope along a direction is ∇E·û. Along a contour that slope is zero, so the gradient is perpendicular to the contour. The force, −∇E, points down the slope."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">A gas-phase output lists atomic forces that add up to (0.012, 0.000, 0.000) Hartree/Å. What does this suggest?</p>
+      <div class="options"><button type="button">The molecule is accelerating, which is normal</button><button type="button">The gradient is inaccurate or inconsistent</button><button type="button">The geometry is converged</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["An isolated molecule cannot push itself. Translational invariance requires the forces to sum to zero.","Correct. The sum should vanish to numerical precision. A residual this large points to an SCF, grid or gradient problem.","Convergence is about every component being small; this is a consistency check that has failed.","Shifting a whole molecule does not change its energy, so the forces must add to zero. A clearly nonzero sum means something in the gradient calculation is off."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Why does steepest descent zig-zag in a long, narrow valley?</p>
+      <div class="options"><button type="button">The step size is always too small</button><button type="button">The gradient is zero along the valley</button><button type="button">The gradient points mostly across the valley, not along it</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Small steps would avoid overshooting. Zig-zagging comes from steps that are too long across the valley.","Along the valley floor the slope is small but not zero; that is where the minimum lies.","Correct. The walls are steep and the floor is shallow, so the force mostly points at the opposite wall, and each step overshoots across.","In a narrow valley the steep walls dominate the gradient. Each step heads mostly across, overshoots, and the next step comes back, making little progress along the floor."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="derivatives.html">← 1.4 Derivatives</a>
+    <a href="curvature.html">1.6 Second derivatives and curvature →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = 2.5, S = 0.4;
+  const E = (x, y) => (x * x - 1) ** 2 + K * (y - S * x) ** 2;
+  const gx = (x, y) => 4 * x * (x * x - 1) - 2 * K * S * (y - S * x);
+  const gy = (x, y) => 2 * K * (y - S * x);
+  const C = () => ({ ink: HN.css("--ink"), ink2: HN.css("--ink-2"), ink3: HN.css("--ink-3"), acc: HN.css("--accent"), mark: HN.css("--mark") });
+  let P = [-0.55, 0.75], showField = false;
+
+  const map = new HN.Plot(document.getElementById("map"), {
+    xr: [-1.8, 1.8], yr: [-1.2, 1.2], equal: true, aspect: 0.66, xlabel: "x", ylabel: "y",
+    field: E, fieldOpts: { transform: "sqrt", step: 0.14, max: 8 },
+    draw(p) {
+      const c = C();
+      if (showField) {
+        for (let x = -1.65; x <= 1.66; x += 0.3) for (let y = -1.05; y <= 1.06; y += 0.3) {
+          const a = gx(x, y), b = gy(x, y), n = Math.hypot(a, b); if (n < 1e-6) continue;
+          const L = Math.min(18, 5 + 5 * Math.sqrt(n));
+          p.arrowDir(x, y, -a, -b, L, c.ink3, 1.3);
+        }
+      }
+      const a = gx(P[0], P[1]), b = gy(P[0], P[1]), n = Math.hypot(a, b);
+      if (n > 1e-6) {
+        const tx = -b / n, ty = a / n;
+        p.seg(P[0] - tx * 0.35, P[1] - ty * 0.35, P[0] + tx * 0.35, P[1] + ty * 0.35, c.ink3, 2, [5, 4]);
+        const L = Math.min(90, 16 + 18 * Math.sqrt(n));
+        p.arrowDir(P[0], P[1], a, b, L, c.ink, 2.6);
+        p.arrowDir(P[0], P[1], -a, -b, L, c.mark, 2.6);
+      }
+      p.dot(P[0], P[1], c.ink, 5.5);
+    },
+  });
+  map.drag((x, y, ph) => { if (ph === "up") return; P = [Math.max(-1.75, Math.min(1.75, x)), Math.max(-1.15, Math.min(1.15, y))]; upd(); });
+  document.getElementById("field").addEventListener("change", (e) => { showField = e.target.checked; map.render(); });
+
+  const out = document.getElementById("out");
+  out.innerHTML = '<div><span class="label">Gradient</span><div class="mjx" id="o-g"></div></div>' +
+    '<div><span class="label">Length and max</span><div class="val" id="o-n"></div></div>' +
+    '<div><span class="label">Energy</span><div class="val" id="o-e"></div></div>';
+  function upd() {
+    const a = gx(P[0], P[1]), b = gy(P[0], P[1]), n = Math.hypot(a, b);
+    HN.setTex(document.getElementById("o-g"), "\\(\\nabla E = \\begin{pmatrix} " + HN.texf(a, 2) + " \\\\ " + HN.texf(b, 2) + " \\end{pmatrix}\\)");
+    document.getElementById("o-n").innerHTML = "|∇E| = " + HN.fmt(n, 3) + "<br>max |gᵢ| = " + HN.fmt(Math.max(Math.abs(a), Math.abs(b)), 3);
+    document.getElementById("o-e").textContent = HN.fmt(E(P[0], P[1]), 3);
+    map.render();
+  }
+  upd();
+
+  /* steepest descent */
+  let S0 = [-1.5, -0.9], alpha = 0.12;
+  function run() {
+    const pts = [S0.slice()]; let x = S0[0], y = S0[1], n = 0;
+    for (; n < 200; n++) {
+      const a = gx(x, y), b = gy(x, y);
+      if (Math.hypot(a, b) < 1e-3) break;
+      x -= alpha * a; y -= alpha * b; pts.push([x, y]);
+      if (!isFinite(x) || Math.abs(x) > 5 || Math.abs(y) > 5) break;
+    }
+    return { pts, n, g: Math.hypot(gx(x, y), gy(x, y)), e: E(x, y) };
+  }
+  let res = run();
+  const sd = new HN.Plot(document.getElementById("sd"), {
+    xr: [-1.8, 1.8], yr: [-1.2, 1.2], equal: true, aspect: 0.66, xlabel: "x", ylabel: "y",
+    field: E, fieldOpts: { transform: "sqrt", step: 0.14, max: 8 },
+    draw(p) {
+      const c = C();
+      p.path(res.pts.slice(0, 60), c.mark, 1.8);
+      res.pts.slice(0, 60).forEach(([x, y], i) => p.dot(x, y, i ? c.mark : c.ink, i ? 2.6 : 5.5));
+    },
+  });
+  sd.drag((x, y, ph) => { if (ph === "up") return; S0 = [Math.max(-1.75, Math.min(1.75, x)), Math.max(-1.15, Math.min(1.15, y))]; sdUpd(); });
+  const sdout = document.getElementById("sdout");
+  function sdUpd() {
+    res = run();
+    sdout.innerHTML = '<div><span class="label">Steps taken</span><div class="val">' + (res.n >= 200 ? "200+ (not converged)" : res.n) + '</div><div class="hint">stop when |∇E| &lt; 0.001</div></div>' +
+      '<div><span class="label">Final |∇E|</span><div class="val">' + HN.fmt(res.g, 4) + '</div></div>';
+    sd.render();
+  }
+  HN.range("alpha", (v) => { alpha = v; sdUpd(); }, (v) => HN.fmt(v, 2));
+  document.getElementById("alpha").dispatchEvent(new Event("input"));
+})();
+</script>
+</body>
+</html>
