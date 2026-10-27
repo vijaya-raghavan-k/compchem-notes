@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Geometry Optimization Algorithms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Moving on the potential energy surface</a> · 2.1</div>
+    <h1>Geometry optimization algorithms</h1>
+    <p class="goal">Goal: understand how steepest descent, conjugate gradient, Newton and quasi-Newton (BFGS) methods choose their steps, why they differ so much in speed, and which one your program is running.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Four optimizers, one curved valley</h2>
+    <p>Real potential energy surfaces have long, curved valleys: a soft coordinate (an angle, a torsion) coupled to a stiff one (a bond). Below is a model surface of exactly that shape, with its minimum at (1, 1). All four optimizers start from the same point and stop when the gradient length falls below \(10^{-4}\).</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Optimizer race on a curved valley</b><span class="hint">Tap to choose the starting point</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="Contour map of a curved valley with the paths of steepest descent, conjugate gradient, Newton and BFGS optimizers from a common starting point to the minimum."></canvas>
+        <div class="legend" id="leg"></div>
+        <div class="scroll"><table class="data" id="tab"></table></div>
+        <p class="hint" style="margin-top:10px">"Gradients" counts every gradient evaluation, including the extra ones a line search needs. For a DFT calculation each one is a full SCF plus gradient, so this column is the real cost.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px">Steepest descent zig-zags down the valley walls and does not finish within 500 steps. Conjugate gradient follows the valley much better. Newton, using the exact Hessian, takes large well-aimed steps. BFGS, which never computes a Hessian, comes close to Newton after a few steps because it learns the curvature from the gradients it has already seen.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Learning curvature from gradients</h2>
+    <p>The idea behind quasi-Newton methods fits in one dimension. Newton's step needs \(E''\) (lesson 1.7). If we do not have it, estimate it from the last two gradients, a finite difference made of points we already paid for:</p>
+    <div class="math">\[ E''(x_k) \approx \frac{g_k - g_{k-1}}{x_k - x_{k-1}}, \qquad x_{k+1} = x_k - \frac{g_k}{E''(x_k)} \]</div>
+    <ol class="work">
+      <li><div>Take \(E = x^4 - 2x^2\), so \(g = 4x^3 - 4x\), with two starting points \(x_0 = 1.5\) (\(g = 7.500\)) and \(x_1 = 1.3\) (\(g = 3.588\)).</div></li>
+      <li><div>Curvature estimate: \(\dfrac{3.588 - 7.500}{1.3 - 1.5} = \dfrac{-3.912}{-0.2} = 19.56\). The true value at 1.3 is \(12(1.3)^2 - 4 = 16.28\): not exact, but in the right range.</div></li>
+      <li><div>Step: \(x_2 = 1.3 - 3.588/19.56 = 1.1166\).</div></li>
+      <li><div>Continue, each time using the two latest gradients:
+        <div class="scroll"><table class="data">
+          <thead><tr><th>k</th><th>x</th><th>g</th><th>curvature estimate</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>1.300000</td><td>3.58800</td><td>19.56</td></tr>
+            <tr><td>2</td><td>1.116564</td><td>1.10190</td><td>13.55</td></tr>
+            <tr><td>3</td><td>1.035262</td><td>0.29719</td><td>9.90</td></tr>
+            <tr><td>4</td><td>1.005235</td><td>0.04221</td><td>8.49</td></tr>
+            <tr><td>5</td><td>1.000264</td><td>0.00212</td><td>8.07</td></tr>
+            <tr><td>6</td><td>1.000002</td><td>0.00002</td><td>8.00</td></tr>
+          </tbody>
+        </table></div></div></li>
+      <li><div>The curvature estimate converges to the true value 8 as the steps converge to the minimum. Convergence is slightly slower than Newton (lesson 1.7) but needs no second derivatives at all.</div></li>
+    </ol>
+    <p>In many dimensions the same idea is the <b>secant condition</b> from lesson 1.8: after a step \(\mathbf s = \mathbf x_{k+1} - \mathbf x_k\) with gradient change \(\mathbf y = \mathbf g_{k+1} - \mathbf g_k\), the updated Hessian must satisfy \(\mathbf B_{k+1}\mathbf s = \mathbf y\). BFGS is the particular update that does this while keeping \(\mathbf B\) symmetric and positive definite:</p>
+    <div class="math">\[ \mathbf B_{k+1} = \mathbf B_k + \frac{\mathbf y\mathbf y^{\mathsf T}}{\mathbf y^{\mathsf T}\mathbf s} - \frac{\mathbf B_k\mathbf s\,\mathbf s^{\mathsf T}\mathbf B_k}{\mathbf s^{\mathsf T}\mathbf B_k\mathbf s} \]</div>
+    <div class="note"><b>Key idea.</b> Every step reveals how the gradient changes along one direction. Quasi-Newton methods store that information as an approximate Hessian, so they become Newton-like without ever computing second derivatives.</div>
+
+    <div class="panel try-block" data-solution="Curvature ≈ (4 − 10)/(1.5 − 2.0) = (−6)/(−0.5) = 12. Next point: 1.5 − 4/12 = 1.1667." data-hint="Not yet. Divide the change in gradient by the change in x, then take x_new = x − g/curvature using the latest point.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">x₀ = 2.0, g₀ = 10; x₁ = 1.5, g₁ = 4</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">curvature estimate</label><input id="t1" data-ans="12" data-tol="0.01" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">next x</label><input id="t2" data-ans="1.1667" data-tol="0.005" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Which optimizer, and why</h2>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>Method</th><th>Uses</th><th>Memory</th><th>Convergence</th><th>Typical use</th></tr></thead>
+      <tbody>
+        <tr><td>Steepest descent</td><td>gradient</td><td>none</td><td>linear, slow</td><td>first steps from a bad structure</td></tr>
+        <tr><td>Conjugate gradient</td><td>gradient + previous direction</td><td>one vector</td><td>linear, faster</td><td>large force-field systems</td></tr>
+        <tr><td>Newton / RFO</td><td>exact Hessian</td><td>n × n matrix</td><td>quadratic</td><td>difficult cases, transition states</td></tr>
+        <tr><td>Quasi-Newton (BFGS)</td><td>gradients, updated Hessian</td><td>n × n matrix</td><td>superlinear</td><td>standard for molecular DFT</td></tr>
+        <tr><td>L-BFGS</td><td>last m steps only</td><td>m vectors</td><td>superlinear</td><td>large systems, periodic cells</td></tr>
+        <tr><td>FIRE</td><td>gradient + MD-like velocity</td><td>one vector</td><td>robust, linear</td><td>rough or noisy surfaces, large systems</td></tr>
+      </tbody>
+    </table></div>
+    <ul style="margin-top:16px">
+      <li><b>Starting Hessian matters.</b> BFGS needs an initial guess. A unit matrix works but wastes early steps. Programs use a <em>model Hessian</em> built from bonds, angles and torsions with typical force constants (for example Lindh or Swart models), which often halves the number of steps. For stubborn cases you can compute the exact Hessian once at the start.</li>
+      <li><b>What programs run.</b> Molecular DFT codes default to quasi-Newton optimizers in internal coordinates. In AMS you can choose the method (quasi-Newton, L-BFGS, FIRE, conjugate gradients) in the geometry-optimization settings; Gaussian's default "Berny" optimizer combines a quasi-Newton update with rational function steps. Check your version's documentation for the exact defaults.</li>
+      <li><b>Cost is gradients.</b> An optimization that needs 40 instead of 20 steps costs twice the CPU time, because every step is a full SCF and gradient. A better optimizer setup is often the cheapest speed-up available.</li>
+      <li><b>Signs of trouble.</b> Energy rising for several steps, steps repeatedly hitting the maximum step size, or oscillating gradients usually mean the Hessian model is poor, the SCF is not converging consistently, or the structure is near a saddle. Restarting with a computed Hessian often fixes it.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: line searches, positive definiteness and rational function steps</summary>
+      <div>
+        <p><b>Line searches and the Wolfe conditions.</b> Methods that pick a direction then a step length require the step to lower the energy enough (Armijo condition, \(E(\mathbf x+\alpha\mathbf d) \le E(\mathbf x) + c_1\alpha\,\mathbf g^{\mathsf T}\mathbf d\)) and to flatten the slope enough (curvature condition). Satisfying both guarantees \(\mathbf y^{\mathsf T}\mathbf s &gt; 0\), which keeps the BFGS Hessian positive definite and every step a descent direction.</p>
+        <p><b>Conjugacy.</b> On an exact quadratic in \(n\) dimensions, conjugate gradient with exact line searches converges in at most \(n\) steps: each new direction is chosen so that minimizing along it does not undo progress along earlier ones (\(\mathbf d_i^{\mathsf T}\mathbf H\mathbf d_j = 0\)). Real surfaces are not quadratic, so it is restarted periodically.</p>
+        <p><b>L-BFGS.</b> Instead of storing the \(n\times n\) matrix, keep the last \(m\) pairs \((\mathbf s, \mathbf y)\), often 5–20, and apply the update implicitly. Memory and cost per step become order \(mn\), which is what makes optimization of thousands of atoms feasible.</p>
+        <p><b>Rational function optimization.</b> Newton's step jumps to any stationary point of the quadratic model (lesson 1.7). RFO solves a slightly enlarged eigenvalue problem whose lowest solution always gives a step that lowers the energy, with a built-in shift that also controls the step length. The partitioned version (P-RFO) maximizes along one mode and minimizes along the rest: the transition-state optimizer of lesson 2.4.</p>
+        <p><b>GDIIS.</b> Direct inversion in the iterative subspace, best known from SCF convergence (lesson 3.4), can also extrapolate geometries from previous steps. Some optimizers combine it with quasi-Newton steps near convergence.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">Why is BFGS the usual choice for DFT geometry optimizations rather than full Newton–Raphson?</p>
+      <div class="options"><button type="button">BFGS converges in fewer steps than Newton</button><button type="button">It reaches near-Newton convergence without computing the expensive exact Hessian at each step</button><button type="button">Newton cannot find minima</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Usually Newton needs fewer steps, as in the race above; but each of its steps costs far more.","Correct. An analytic DFT Hessian costs many gradients; BFGS learns the curvature from gradients it already has.","Newton finds minima well when the Hessian is positive definite; its problem is cost.","Newton needs the exact Hessian every step, which is expensive for DFT. BFGS builds a good approximation from gradient differences, giving almost the same speed per step for a fraction of the cost."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Which optimizer would you pick for a 5000-atom periodic system with a force field?</p>
+      <div class="options"><button type="button">Newton–Raphson with the exact Hessian</button><button type="button">Full BFGS storing a 15000 × 15000 matrix</button><button type="button">L-BFGS or FIRE</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["A 15000 × 15000 Hessian is expensive to compute, store and factorize at every step.","Storing and updating a matrix with 2.25 × 10⁸ entries is wasteful; limited-memory methods do almost as well.","Correct. Both use memory proportional to the number of atoms and scale to large systems.","For very large systems, methods that store only a few vectors win: L-BFGS keeps a short history of steps, and FIRE uses an MD-like velocity."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">The secant condition requires the updated Hessian to satisfy \(\mathbf B\mathbf s = \mathbf y\). What does it encode?</p>
+      <div class="options"><button type="button">The observed change in gradient along the last step</button><button type="button">That the step is downhill</button><button type="button">That the Hessian is diagonal</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. From Δg ≈ HΔx (lesson 1.8), the update is forced to reproduce what the last step actually measured.","Downhill steps come from positive definiteness and line searches; the secant condition is about matching measured curvature.","BFGS Hessians are generally full, not diagonal.","Near a point, the gradient changes by about HΔx. After a step s we measured that change, y, so the update makes B reproduce it exactly: B s = y."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="imaginary-frequencies.html">← 1.11 Imaginary frequencies</a>
+    <a href="convergence-criteria.html">2.2 Convergence criteria →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = 10;
+  const E = (p) => (1 - p[0]) ** 2 + K * (p[1] - p[0] * p[0]) ** 2;
+  const G = (p) => [-2 * (1 - p[0]) - 4 * K * p[0] * (p[1] - p[0] * p[0]), 2 * K * (p[1] - p[0] * p[0])];
+  const Hs = (p) => [2 - 4 * K * (p[1] - p[0] * p[0]) + 8 * K * p[0] * p[0], -4 * K * p[0], 2 * K];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1], add = (a, b, s) => [a[0] + s * b[0], a[1] + s * b[1]], nrm = (a) => Math.hypot(a[0], a[1]);
+  const mv = (M, v) => [M[0][0] * v[0] + M[0][1] * v[1], M[1][0] * v[0] + M[1][1] * v[1]];
+
+  function lineSearch(p, d, g, a0) { let a = Math.min(a0, 0.4 / Math.max(1e-12, nrm(d))), e = E(p), n = 0; while (E(add(p, d, a)) > e + 1e-4 * a * dot(g, d) && n < 40) { a *= 0.5; n++; } return [a, n + 1]; }
+  function run(m, p0) {
+    let p = p0.slice(), g = G(p), d = [-g[0], -g[1]], nf = 1, it = 0, Bi = [[0.05, 0], [0, 0.05]];
+    const path = [p.slice()];
+    for (; it < 500; it++) {
+      if (nrm(g) < 1e-4) break;
+      if (m === "sd") d = [-g[0], -g[1]];
+      else if (m === "newton") {
+        const [a, b, c] = Hs(p), e = HN.eig2(a, b, c), l = e.l.map((x) => Math.max(Math.abs(x), 1e-3));
+        d = [0, 0]; e.v.forEach((v, i) => { const s = -dot(v, g) / l[i]; d = add(d, v, s); });
+        const dn = nrm(d); if (dn > 0.5) d = [d[0] * 0.5 / dn, d[1] * 0.5 / dn];
+      } else if (m === "bfgs") { const t = mv(Bi, g); d = [-t[0], -t[1]]; }
+      if (dot(g, d) >= 0) d = [-g[0], -g[1]];
+      const [a, n] = lineSearch(p, d, g, m === "sd" ? 0.2 : 1); nf += n;
+      const pn = add(p, d, a), gn = G(pn);
+      if (m === "bfgs") {
+        const s = [pn[0] - p[0], pn[1] - p[1]], y = [gn[0] - g[0], gn[1] - g[1]], sy = dot(s, y);
+        if (sy > 1e-12) {
+          if (it === 0) { const sc = sy / dot(y, y); Bi = [[sc, 0], [0, sc]]; }
+          const r = 1 / sy, I = [[1, 0], [0, 1]];
+          const L = [[I[0][0] - r * s[0] * y[0], I[0][1] - r * s[0] * y[1]], [I[1][0] - r * s[1] * y[0], I[1][1] - r * s[1] * y[1]]];
+          const mm = (A, B) => [[A[0][0] * B[0][0] + A[0][1] * B[1][0], A[0][0] * B[0][1] + A[0][1] * B[1][1]], [A[1][0] * B[0][0] + A[1][1] * B[1][0], A[1][0] * B[0][1] + A[1][1] * B[1][1]]];
+          const Lt = [[L[0][0], L[1][0]], [L[0][1], L[1][1]]];
+          const T = mm(mm(L, Bi), Lt);
+          Bi = [[T[0][0] + r * s[0] * s[0], T[0][1] + r * s[0] * s[1]], [T[1][0] + r * s[1] * s[0], T[1][1] + r * s[1] * s[1]]];
+        }
+      }
+      if (m === "cg") { const beta = Math.max(0, dot(gn, [gn[0] - g[0], gn[1] - g[1]]) / dot(g, g)); d = add([-gn[0], -gn[1]], d, beta); if (dot(gn, d) >= 0) d = [-gn[0], -gn[1]]; }
+      p = pn; g = gn; path.push(p.slice());
+    }
+    return { path, it, nf, ok: nrm(g) < 1e-4 };
+  }
+
+  const M = [
+    { k: "sd", name: "Steepest descent", col: "--mark", on: true },
+    { k: "cg", name: "Conjugate gradient", col: "--ok", on: true },
+    { k: "newton", name: "Newton", col: "--ink", on: true },
+    { k: "bfgs", name: "BFGS", col: "--accent", on: true },
+  ];
+  let start = [-1.2, 1.0], res = {};
+  M.forEach((m) => (res[m.k] = run(m.k, start)));
+  const plot = new HN.Plot(document.getElementById("c1"), {
+    xr: [-1.6, 1.6], yr: [-0.6, 1.8], aspect: 0.72, xlabel: "x", ylabel: "y",
+    field: (x, y) => E([x, y]), fieldOpts: { transform: "sqrt", step: 0.32, max: 40 },
+    draw(p) {
+      M.forEach((m) => { if (!m.on) return; const col = HN.css(m.col); p.path(res[m.k].path, col, m.k === "sd" ? 1.3 : 2.2); });
+      p.dot(1, 1, HN.css("--ink"), 6, true);
+      p.dot(start[0], start[1], HN.css("--ink"), 5.5);
+      p.text("minimum", 1, 1, HN.css("--ink"), { dx: 10, dy: -10, size: 11 });
+    },
+  });
+  plot.drag((x, y, ph) => { if (ph !== "down" && ph !== "move") return; start = [Math.max(-1.55, Math.min(1.55, x)), Math.max(-0.55, Math.min(1.75, y))]; upd(); });
+
+  const leg = document.getElementById("leg"), tab = document.getElementById("tab");
+  leg.innerHTML = M.map((m, i) => '<label><input type="checkbox" data-i="' + i + '" checked> <i style="background:var(' + m.col + ')"></i>' + m.name + "</label>").join("");
+  leg.querySelectorAll("input").forEach((c) => c.addEventListener("change", () => { M[+c.dataset.i].on = c.checked; plot.render(); }));
+  function upd() {
+    M.forEach((m) => (res[m.k] = run(m.k, start)));
+    tab.innerHTML = "<thead><tr><th>Method</th><th>Steps</th><th>Gradients</th><th>Result</th></tr></thead><tbody>" +
+      M.map((m) => { const r = res[m.k]; return "<tr><td>" + m.name + "</td><td>" + (r.ok ? r.it : "500+") + "</td><td>" + r.nf + "</td><td>" + (r.ok ? "converged" : "not converged") + "</td></tr>"; }).join("") + "</tbody>";
+    plot.render();
+  }
+  upd();
+})();
+</script>
+</body>
+</html>

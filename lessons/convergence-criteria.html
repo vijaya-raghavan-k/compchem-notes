@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Geometry Convergence Criteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Moving on the potential energy surface</a> · 2.2</div>
+    <h1>Convergence criteria</h1>
+    <p class="goal">Goal: know what the energy, gradient and step thresholds each test, see why a geometry can pass a test while still being degrees away from the minimum along a soft coordinate, and choose criteria for the job.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Where an optimizer would stop</h2>
+    <p>Take a molecule reduced to two coordinates: a stiff bond (force constant 1 Hartree/Å²) and a soft torsion. The point you drag is a geometry near the minimum, displaced by \(\delta x\) along the bond and \(\delta\varphi\) along the torsion. The program checks five numbers there. The green region shows every geometry where all five pass: the places where the optimizer would declare "converged".</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>The region a program calls "converged"</b><span class="hint">Drag the point; change the settings</span></div>
+      <div class="panel-body">
+        <div class="seg" id="qual" role="group" aria-label="Convergence quality">
+          <button type="button" data-v="basic" aria-pressed="false">Basic</button>
+          <button type="button" data-v="normal" aria-pressed="true">Normal</button>
+          <button type="button" data-v="good" aria-pressed="false">Good</button>
+          <button type="button" data-v="vgood" aria-pressed="false">Very good</button>
+        </div>
+        <canvas id="c1" class="plot" style="margin-top:12px" role="img" aria-label="Map of bond displacement against torsion displacement. A green region marks geometries that pass all convergence criteria; a lighter region marks those that pass only the gradient criteria. The region is very narrow along the bond and wide along the torsion."></canvas>
+        <div class="legend"><span><i class="bg-ok"></i>all five criteria pass</span><span><i class="bg-accent"></i>gradient criteria pass</span></div>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="kphi">torsion curvature</label><output id="kphi-v"></output></div><input id="kphi" type="range" min="-3.3" max="-1.7" step="0.05" value="-2.4"></div>
+          <div class="range"><div class="top"><label for="fac">optimizer overestimates it ×</label><output id="fac-v"></output></div><input id="fac" type="range" min="1" max="30" step="1" value="1"></div>
+        </div>
+        <div class="scroll"><table class="data" id="tab"></table></div>
+        <p class="hint" id="note" style="margin-top:10px"></p>
+      </div>
+    </div>
+    <p style="margin-top:16px">Look at the blue region first: the gradient tests alone would accept geometries about 13° away along the torsion, but less than 0.001 Å along the bond. With an accurate Hessian, the step test shrinks the accepted region (green) to well under a degree. Now raise the second slider, which makes the optimizer's Hessian think the torsion is stiffer than it is. Its predicted step and energy change shrink, the green region grows until it fills the blue one, and the program can stop more than 10° from the true minimum while every printed test says "pass".</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>What each criterion measures</h2>
+    <ol class="work">
+      <li><div><b>The five tests.</b> At each step the program compares the gradient \(\mathbf g\), the proposed step \(\mathbf s\) and the energy change against thresholds:
+        \[ \max_i|g_i| \le G,\quad \text{rms}(\mathbf g) \le \tfrac23 G,\quad \max_i|s_i| \le S,\quad \text{rms}(\mathbf s) \le \tfrac23 S,\quad |\Delta E| \le E_\text{thr} \]
+        The 2/3 ratio between RMS and maximum thresholds is a common convention; exact definitions differ between programs.</div></li>
+      <li><div><b>Example.</b> A two-atom gradient \(\mathbf g = (0.4, -1.2, 0.3, 0.2, 0.1, -0.5)\times10^{-3}\) Hartree/Å. Max \(= 1.2\times10^{-3}\), which fails a \(10^{-3}\) threshold. RMS \(= \sqrt{(0.16 + 1.44 + 0.09 + 0.04 + 0.01 + 0.25)\times10^{-6}/6} = 5.8\times10^{-4}\), which passes \(\tfrac23\times10^{-3}\). One component is enough to keep the optimization going.</div></li>
+      <li><div><b>How far from the minimum is a small gradient?</b> Near a minimum, along one coordinate with curvature \(k\), the gradient is \(g = k\,\delta\). So the remaining geometry error and energy error are
+        \[ \delta = \frac{g}{k}, \qquad \delta E = \tfrac12 k\delta^2 = \frac{g^2}{2k} \]</div></li>
+      <li><div>At the same gradient, \(g = 10^{-3}\):
+        <div class="scroll"><table class="data">
+          <thead><tr><th>Coordinate</th><th>k</th><th>error δ</th><th>energy error</th></tr></thead>
+          <tbody>
+            <tr><td>stiff bond</td><td>1.0 Hartree/Å²</td><td>0.001 Å</td><td>5 × 10⁻⁷ Hartree</td></tr>
+            <tr><td>soft torsion</td><td>0.004 Hartree/rad²</td><td>0.25 rad = 14°</td><td>1.25 × 10⁻⁴ Hartree</td></tr>
+          </tbody>
+        </table></div>
+        The same gradient threshold leaves the bond essentially exact and the torsion 14° off.</div></li>
+      <li><div><b>Why the step and energy tests exist.</b> With a good Hessian, the proposed Newton step is \(s = g/k = \delta\): it measures the remaining geometry error directly, so the step test catches the torsion. The predicted energy change \(\tfrac12 g\,s = g^2/2k\) catches it too. Both work only if the optimizer's Hessian is right, which is why a poor Hessian can produce false convergence.</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> A gradient threshold bounds force, not position. On soft coordinates, small forces allow large geometry errors, and only the step and energy tests (with a reasonable Hessian) reveal them.</div>
+
+    <div class="panel try-block" data-solution="δφ = g/k = 0.001/0.004 = 0.25 rad = 14.3°. Energy error g²/2k = 10⁻⁶/0.008 = 1.25 × 10⁻⁴ Hartree (0.08 kcal/mol)." data-hint="Not yet. Use δ = g/k, convert radians to degrees with 180/π, and δE = g²/(2k).">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Soft torsion k = 0.004 Hartree/rad², gradient 0.001</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">δφ in radians</label><input id="t1" data-ans="0.25" data-tol="0.005" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">δφ in degrees</label><input id="t2" data-ans="14.3" data-tol="0.2" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">energy error / Hartree</label><input id="t3" data-ans="0.000125" data-tol="0.000005" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Choosing thresholds for the job</h2>
+    <p>Programs offer preset quality levels. The figure uses four levels, each ten times tighter than the last, similar to AMS's named quality settings:</p>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>Level</th><th>Energy / Hartree</th><th>Max gradient / Hartree·Å⁻¹</th><th>Max step / Å</th></tr></thead>
+      <tbody>
+        <tr><td>Basic</td><td>10⁻⁴</td><td>10⁻²</td><td>0.1</td></tr>
+        <tr><td>Normal</td><td>10⁻⁵</td><td>10⁻³</td><td>0.01</td></tr>
+        <tr><td>Good</td><td>10⁻⁶</td><td>10⁻⁴</td><td>0.001</td></tr>
+        <tr><td>Very good</td><td>10⁻⁷</td><td>10⁻⁵</td><td>0.0001</td></tr>
+      </tbody>
+    </table></div>
+    <p class="hint" style="margin-top:8px">Gaussian's defaults, for comparison: max force 4.5 × 10⁻⁴ and RMS force 3.0 × 10⁻⁴ Hartree/Bohr, max displacement 1.8 × 10⁻³ and RMS displacement 1.2 × 10⁻³ Bohr. Always check units (Bohr or Å) and the exact definitions in your program's manual.</p>
+    <ul style="margin-top:14px">
+      <li><b>Before frequencies, thermochemistry or transition states,</b> use a tighter level. Residual error along soft modes shows up as small imaginary frequencies (lesson 1.11) and distorts the low-frequency entropies that dominate free energies (lesson 2.6).</li>
+      <li><b>Floppy molecules and weak complexes</b> (long chains, methyl rotors, hydrogen-bonded dimers) have very soft modes. Expect slow convergence and check that low frequencies are stable after re-optimizing.</li>
+      <li><b>The noise floor.</b> Gradients carry numerical noise from SCF convergence and integration grids. If the noise is near the gradient threshold, the optimizer wanders and oscillates instead of converging. The fix is a finer grid and tighter SCF, not more optimization steps. The SCF must always be converged well beyond the geometry criteria.</li>
+      <li><b>Energies converge first.</b> The energy error is quadratic in the geometry error, so reaction energies are usually fine at Normal settings, while geometries and frequencies benefit from tighter ones.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: error propagation and false convergence</summary>
+      <div>
+        <p><b>Geometry error from the gradient.</b> In many dimensions \(\boldsymbol\delta \approx \mathbf H^{-1}\mathbf g\). Writing \(\mathbf g\) in the Hessian's eigenvectors, each component is divided by its eigenvalue, so the geometry error is dominated by the lowest-curvature modes. The ratio of largest to smallest curvature (the condition number, lesson 1.5) sets how unevenly converged a structure is.</p>
+        <p><b>Energy converges quadratically.</b> \(\delta E \approx \tfrac12\boldsymbol\delta^{\mathsf T}\mathbf H\boldsymbol\delta = \tfrac12\mathbf g^{\mathsf T}\mathbf H^{-1}\mathbf g\). Halving the gradient divides the energy error by four. This is why comparing energies across conformers needs much less geometric precision than comparing low-frequency modes.</p>
+        <p><b>False convergence.</b> The step and energy tests use the optimizer's approximate Hessian. If it overestimates the curvature of a soft mode (common with generic model Hessians for unusual torsions or weak contacts), predicted steps and energy changes look small and the run stops early. Checks: re-run from the "converged" geometry with a fresh Hessian, or compute frequencies; a lowest frequency that changes a lot after re-optimizing indicates the original was not converged.</p>
+        <p><b>Effect on frequencies.</b> At a non-stationary point, the projected Hessian includes gradient-dependent terms, and residual displacement along a soft mode shifts its curvature through third-derivative (anharmonic) coupling. Low frequencies are the most sensitive, with errors of tens of cm⁻¹ common for loosely converged floppy molecules.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">A geometry passes the gradient thresholds. Which coordinates are most likely still noticeably off?</p>
+      <div class="options"><button type="button">Bond lengths</button><button type="button">All coordinates equally</button><button type="button">Soft coordinates such as torsions and intermolecular distances</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Bonds are stiff, so a small gradient means a very small bond-length error.","The error δ = g/k depends on the curvature, so it is very uneven.","Correct. With δ = g/k, a small curvature k allows a large geometry error at the same small gradient.","The remaining error along each coordinate is about g/k. Stiff bonds have large k and tiny errors; torsions and weak contacts have small k and much larger errors."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">An optimization oscillates near convergence: the gradient goes down, up, down and never passes. What is the most likely fix?</p>
+      <div class="options"><button type="button">Tighten SCF convergence and use a finer integration grid</button><button type="button">Allow more optimization cycles</button><button type="button">Loosen the energy criterion</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Oscillation near the threshold usually means the gradient noise is comparable to the threshold; reducing the noise lets the optimizer converge.","More cycles just repeat the oscillation if the gradients themselves are noisy.","Loosening criteria hides the symptom and leaves an unconverged structure.","When gradients carry numerical noise close to the threshold, the optimizer chases noise. Making the gradients cleaner (tighter SCF, finer grid) removes the floor."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">Why do programs test the step size and energy change in addition to the gradient?</p>
+      <div class="options"><button type="button">To save computer time</button><button type="button">Because on soft modes a small gradient can hide a large remaining geometry error</button><button type="button">Because the gradient is often wrong</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Extra tests make convergence stricter, not cheaper.","Correct. The predicted step ≈ H⁻¹g estimates the remaining geometry error directly, and the energy change gives a second check.","The gradient is accurate; it simply measures force rather than distance from the minimum.","Force and distance are related by the curvature: δ = g/k. For soft coordinates the gradient can be small while δ is large. The predicted step estimates δ directly."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="optimization-algorithms.html">← 2.1 Optimization algorithms</a>
+    <a href="coordinate-systems.html">2.3 Coordinate systems →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const KX = 1.0;
+  const Q = { basic: [1e-4, 1e-2, 0.1], normal: [1e-5, 1e-3, 0.01], good: [1e-6, 1e-4, 1e-3], vgood: [1e-7, 1e-5, 1e-4] };
+  let q = "normal", kphi = Math.pow(10, -2.4), fac = 1, P = [8, 0.0004];   // P = [δφ in degrees, δx in Å]
+  const rad = (d) => d * Math.PI / 180;
+  function tests(dphiDeg, dx) {
+    const [Et, Gt, St] = Q[q], dp = rad(dphiDeg);
+    const g = [KX * dx, kphi * dp], s = [g[0] / KX, g[1] / (kphi * fac)];
+    const gmax = Math.max(Math.abs(g[0]), Math.abs(g[1])), grms = Math.hypot(g[0], g[1]) / Math.SQRT2;
+    const smax = Math.max(Math.abs(s[0]), Math.abs(s[1])), srms = Math.hypot(s[0], s[1]) / Math.SQRT2;
+    const dE = 0.5 * (g[0] * s[0] + g[1] * s[1]);
+    const r = [
+      ["max gradient", gmax, Gt], ["RMS gradient", grms, (2 / 3) * Gt],
+      ["max step", smax, St], ["RMS step", srms, (2 / 3) * St], ["energy change", dE, Et],
+    ];
+    return { r, gradOK: gmax <= Gt && grms <= (2 / 3) * Gt, all: r.every(([, v, t]) => v <= t) };
+  }
+  const C = () => ({ ink: HN.css("--ink"), ok: HN.rgb("--ok"), acc: HN.rgb("--accent") });
+  const plot = new HN.Plot(document.getElementById("c1"), {
+    xr: [-30, 30], yr: [-0.004, 0.004], aspect: 0.6, xlabel: "torsion error δφ / degrees", ylabel: "bond error δx / Å", xticks: 10, yticks: 0.002, pad: { l: 66, r: 14, t: 14, b: 38 },
+    field: (x, y) => 0.5 * KX * y * y / 1.6e-5 + 0.5 * (rad(x) ** 2) / 0.27, fieldOpts: { transform: "sqrt", step: 0.18, max: 4 },
+    draw(p) {
+      const c = C(), g = p.ctx, cell = 3 * p.dpr;
+      for (let px = p.L; px < p.R; px += cell) for (let py = p.T; py < p.B; py += cell) {
+        const t = tests(p.ix(px + cell / 2), p.iy(py + cell / 2));
+        if (t.all) { g.fillStyle = "rgba(" + c.ok.join(",") + ",0.55)"; g.fillRect(px, py, cell, cell); }
+        else if (t.gradOK) { g.fillStyle = "rgba(" + c.acc.join(",") + ",0.22)"; g.fillRect(px, py, cell, cell); }
+      }
+      p.seg(0, -1, 0, 1, HN.css("--ink-3"), 1, [3, 4]); p.seg(-40, 0, 40, 0, HN.css("--ink-3"), 1, [3, 4]);
+      p.dot(0, 0, c.ink, 5, true);
+      p.dot(P[0], P[1], c.ink, 5.5);
+    },
+  });
+  plot.drag((x, y, ph) => { if (ph === "up") return; P = [Math.max(-29, Math.min(29, x)), Math.max(-0.0039, Math.min(0.0039, y))]; upd(); });
+  const tab = document.getElementById("tab"), note = document.getElementById("note");
+  const sci = (v) => (v === 0 ? "0" : v.toExponential(1).replace("e-", " × 10⁻").replace("e+", " × 10^").replace(/⁻(\d+)/, (m, d) => "⁻" + d.split("").map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+c]).join("")));
+  function upd() {
+    const t = tests(P[0], P[1]);
+    tab.innerHTML = "<thead><tr><th>Test</th><th>Value</th><th>Threshold</th><th></th></tr></thead><tbody>" +
+      t.r.map(([n, v, th]) => "<tr><td>" + n + "</td><td>" + sci(v) + "</td><td>" + sci(th) + '</td><td><span class="status ' + (v <= th ? "ok" : "ts") + '">' + (v <= th ? "pass" : "fail") + "</span></td></tr>").join("") + "</tbody>";
+    note.textContent = "Geometry here: " + HN.fmt(P[0], 1) + "° from the torsion minimum and " + HN.fmt(P[1] * 1000, 2) + " mÅ along the bond. " +
+      (t.all ? "The program would report convergence." : t.gradOK ? "Forces are small enough, but the step or energy test still says keep going." : "Not converged.");
+    plot.render();
+  }
+  HN.seg(document.getElementById("qual"), (v) => { q = v; upd(); });
+  HN.range("kphi", (v) => { kphi = Math.pow(10, v); upd(); }, (v) => HN.fmt(Math.pow(10, v), 4) + " Ha/rad²");
+  HN.range("fac", (v) => { fac = v; upd(); }, (v) => HN.fmt(v, 0));
+  document.getElementById("kphi").dispatchEvent(new Event("input"));
+  document.getElementById("fac").dispatchEvent(new Event("input"));
+})();
+</script>
+</body>
+</html>

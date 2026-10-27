@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thermochemistry from Frequencies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Moving on the potential energy surface</a> · 2.6</div>
+    <h1>Thermochemistry from frequencies</h1>
+    <p class="goal">Goal: turn an electronic energy and a list of frequencies into zero-point energy, enthalpy, entropy and Gibbs energy at any temperature, and know which parts of that calculation are fragile.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Where a molecule's entropy comes from</h2>
+    <p>The electronic energy \(E\) is the bottom of a well. Real molecules at temperature \(T\) also translate, rotate and vibrate, and each kind of motion adds energy and entropy. In the ideal-gas, rigid-rotor, harmonic-oscillator (RRHO) model, each contribution follows from a handful of numbers: the mass, the rotational constants, the symmetry number and the frequencies. Here is water, computed exactly that way.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>RRHO thermochemistry of water at 1 bar</b><span class="hint">Change the temperature</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="Entropy of gas-phase water against temperature split into translational, rotational and vibrational parts, with a marker at the chosen temperature."></canvas>
+        <div class="legend"><span><i class="bg-ink"></i>total</span><span><i class="bg-accent"></i>translation</span><span><i class="bg-ok"></i>rotation</span><span><i class="bg-mark"></i>vibration</span></div>
+        <div class="controls"><div class="range"><div class="top"><label for="T">temperature</label><output id="T-v"></output></div><input id="T" type="range" min="100" max="1500" step="0.05" value="298.15"></div></div>
+        <div class="scroll"><table class="data" id="tab"></table></div>
+        <p class="hint" style="margin-top:10px">Inputs: mass 18.011 amu, rotational constants 27.88, 14.51 and 9.28 cm⁻¹, symmetry number 2, vibrational wavenumbers 1595, 3657 and 3756 cm⁻¹. At 298.15 K the total entropy is 188.7 J/(mol·K); the experimental standard entropy is 188.8.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px">Translation dominates the entropy, rotation adds a solid share, and water's three stiff vibrations contribute almost nothing until the temperature is high. Soft vibrations behave very differently, as the second figure in Step 3 shows: they can contribute more entropy than a whole rotational degree of freedom, and they are the least reliable numbers in the calculation.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Zero-point energy and vibrational entropy by hand</h2>
+    <ol class="work">
+      <li><div><b>Zero-point energy.</b> A quantum oscillator never sits at the bottom of its well; its lowest level is \(\tfrac12 h c\tilde\nu\) above it. Summing over modes:
+        \[ \text{ZPE} = \tfrac12\sum_k hc\tilde\nu_k, \qquad 1\ \text{cm}^{-1} = 2.859\times10^{-3}\ \text{kcal/mol} \]
+        For water, \(\tfrac12(1595 + 3657 + 3756) = 4504\) cm⁻¹ \(= 12.88\) kcal/mol. That is a large number to add to a barrier or reaction energy, and it changes between reactant and transition state.</div></li>
+      <li><div><b>The key variable</b> for each mode is \(x = hc\tilde\nu/k_BT\): the vibrational energy spacing compared with thermal energy. With \(hc/k_B = 1.4388\) cm·K, \(x = 1.4388\,\tilde\nu/T\).</div></li>
+      <li><div><b>Vibrational entropy</b> of one harmonic mode:
+        \[ \frac{S_\text{vib}}{R} = \frac{x}{e^{x} - 1} - \ln\left(1 - e^{-x}\right) \]</div></li>
+      <li><div>At 298.15 K, compare a stiff and a soft mode:
+        <div class="scroll"><table class="data">
+          <thead><tr><th>ν̃ / cm⁻¹</th><th>x</th><th>S / R</th><th>S / J·mol⁻¹K⁻¹</th><th>−TS / kcal·mol⁻¹</th></tr></thead>
+          <tbody>
+            <tr><td>1000</td><td>4.826</td><td>0.047</td><td>0.39</td><td>−0.03</td></tr>
+            <tr><td>50</td><td>0.241</td><td>2.424</td><td>20.16</td><td>−1.44</td></tr>
+          </tbody>
+        </table></div>
+        One 50 cm⁻¹ torsion lowers the Gibbs energy by about 1.4 kcal/mol through entropy alone.</div></li>
+      <li><div><b>Putting it together.</b> Programs report
+        \[ H = E + \text{ZPE} + E_\text{trans} + E_\text{rot} + E_\text{vib}(T) + RT, \qquad G = H - TS \]
+        with \(E_\text{trans} = E_\text{rot} = \tfrac32 RT\) for a non-linear molecule, and \(S = S_\text{trans} + S_\text{rot} + S_\text{vib} + S_\text{elec}\).</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> Stiff modes contribute zero-point energy; soft modes contribute entropy. The same list of frequencies controls both, which is why accurate low frequencies matter for free energies.</div>
+
+    <div class="panel try-block" data-solution="ZPE = ½(500 + 1500 + 3000) = 2500 cm⁻¹ × 2.859 × 10⁻³ = 7.15 kcal/mol. x = 1.4388 × 200 / 300 = 0.959." data-hint="Not yet. ZPE is half the sum of wavenumbers, converted with 2.859 × 10⁻³ kcal/mol per cm⁻¹. x = 1.4388 ν̃ / T.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Modes at 500, 1500 and 3000 cm⁻¹</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">ZPE / kcal·mol⁻¹</label><input id="t1" data-ans="7.15" data-tol="0.03" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">x for 200 cm⁻¹ at 300 K</label><input id="t2" data-ans="0.959" data-tol="0.005" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>The fragile parts of a free energy</h2>
+    <p>The harmonic formula gives entropy that grows without limit as \(\tilde\nu \to 0\). Real soft modes (methyl rotations, chain torsions, intermolecular motions) are closer to free rotors, and their computed frequencies are the noisiest in the output. The quasi-RRHO approach (Grimme) blends the harmonic entropy into a free-rotor entropy below about 100 cm⁻¹.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Entropy of one low-frequency mode</b><span class="hint">Change the frequency and temperature</span></div>
+      <div class="panel-body">
+        <canvas id="c2" class="plot" role="img" aria-label="Entropy of a single vibrational mode against its wavenumber on a logarithmic axis, comparing the harmonic oscillator, which diverges at low frequency, with the quasi-RRHO interpolation, which levels off."></canvas>
+        <div class="legend"><span><i class="bg-mark"></i>harmonic oscillator</span><span><i class="bg-accent"></i>quasi-RRHO (ω₀ = 100 cm⁻¹)</span><span><i class="bg-ink3"></i>free rotor</span></div>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="nu">wavenumber</label><output id="nu-v"></output></div><input id="nu" type="range" min="0.6" max="2.7" step="0.01" value="1.3"></div>
+          <div class="range"><div class="top"><label for="T2">temperature</label><output id="T2-v"></output></div><input id="T2" type="range" min="200" max="1000" step="10" value="300"></div>
+        </div>
+        <div class="readout" id="o2"></div>
+      </div>
+    </div>
+
+    <ul style="margin-top:16px">
+      <li><b>Use the reaction temperature.</b> Thermal decomposition happens at several hundred kelvin. Every \(-TS\) term grows with \(T\), so free energies at 298 K can give the wrong picture for high-temperature chemistry. Recompute the thermochemistry at the relevant \(T\); it costs nothing once the frequencies exist.</li>
+      <li><b>Fragmentation is entropy-driven.</b> When one molecule becomes two, a whole extra set of translations and rotations appears. At 600–700 K the \(-T\Delta S\) term of such a step is large and favourable, and it can outweigh a considerable enthalpy cost.</li>
+      <li><b>Standard states.</b> Gas-phase outputs use 1 bar (or 1 atm). For reactions in solution the 1 mol/L standard state is used; the conversion adds about 1.9 kcal/mol (\(RT\ln 24.8\) at 298 K) to the free energy of every species. It cancels for unimolecular steps but not when the number of molecules changes.</li>
+      <li><b>Symmetry numbers and electronic degeneracy.</b> The rotational entropy contains \(-R\ln\sigma\) (σ = 2 for water, 12 for benzene or methane). An open-shell doublet radical has \(S_\text{elec} = R\ln 2 = 5.76\) J/(mol·K). Both are easy to forget in a homolysis energy.</li>
+      <li><b>Conformers.</b> A floppy molecule populates many minima. Using only one conformer for the reactant (or the TS) can misplace free energies by more than 1 kcal/mol; Boltzmann averaging over a conformer ensemble fixes this.</li>
+      <li><b>Scaling factors.</b> Harmonic frequencies are often scaled (lesson 1.7); separate scaling factors exist for ZPE and for frequencies, specific to each functional and basis.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: partition functions, hindered rotors and the condensed phase</summary>
+      <div>
+        <p><b>From partition functions.</b> Everything here follows from the molecular partition function \(q = q_\text{trans}\,q_\text{rot}\,q_\text{vib}\,q_\text{elec}\) through \(U = k_BT^2\,\partial\ln Q/\partial T\) and \(S = k_B\ln Q + U/T\). For the ideal gas, \(q_\text{trans} = (2\pi mk_BT/h^2)^{3/2}\,k_BT/p\), and for a non-linear rigid rotor \(q_\text{rot} = \tfrac{\sqrt\pi}{\sigma}(k_BT/hc)^{3/2}/\sqrt{ABC}\). The vibrational formula in Step 2 is \(-\ln(1-e^{-x})\) plus its temperature derivative. The figure uses exactly these expressions.</p>
+        <p><b>Hindered rotors.</b> A torsion with a barrier comparable to \(k_BT\) is neither harmonic nor free. One-dimensional hindered-rotor treatments compute its energy levels from a scanned torsional potential; quasi-RRHO is a cheaper interpolation that avoids the divergence.</p>
+        <p><b>Anharmonicity.</b> VPT2 corrects frequencies and ZPE for anharmonic coupling. For thermochemistry of small molecules this matters at the 0.1–0.5 kcal/mol level; for floppy molecules the low-frequency treatment matters more.</p>
+        <p><b>Condensed phases.</b> Gas-phase translational and rotational entropies overestimate what a molecule keeps in a liquid or a polymer melt, where these motions are hindered. Implicit-solvation free energies and various entropy corrections address this, but there is no exact recipe. For reactions inside a polymer, compare computed free energies with this limitation in mind.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">Which modes dominate the vibrational entropy of a molecule at room temperature?</p>
+      <div class="options"><button type="button">The highest-frequency stretches</button><button type="button">The lowest-frequency modes, such as torsions</button><button type="button">All modes contribute equally</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Stiff modes have large x = hcν̃/kT; they are barely excited and add almost no entropy (0.4 J/(mol·K) at 1000 cm⁻¹).","Correct. A 50 cm⁻¹ mode adds about 20 J/(mol·K) at 298 K, fifty times more than a 1000 cm⁻¹ mode.","Entropy per mode depends strongly on x = hcν̃/kT, so contributions are very uneven.","Entropy measures how many states are thermally accessible. Low-frequency modes have closely spaced levels, so many are populated; high-frequency modes stay in their ground state."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">You computed ΔG for a decomposition A → B + C at 298 K, but the reaction is studied at 650 K. What should you do?</p>
+      <div class="options"><button type="button">Recompute H, S and G from the same frequencies at 650 K</button><button type="button">Use the 298 K value; temperature only affects rates</button><button type="button">Re-optimize all geometries at 650 K</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. The thermochemistry analysis can be rerun at any temperature from the same frequencies; −TΔS for A → B + C changes a lot between 298 and 650 K.","ΔG = ΔH − TΔS depends directly on T, especially for steps that change the number of molecules.","Geometries on the potential energy surface do not depend on temperature; only the thermal corrections do.","The electronic energies and frequencies stay the same; only the partition-function analysis depends on T. Rerun it at 650 K, where the entropy gain of forming two molecules is much more important."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Why do quasi-RRHO treatments replace the harmonic entropy for modes below about 100 cm⁻¹?</p>
+      <div class="options"><button type="button">Low frequencies do not contribute to entropy</button><button type="button">To make calculations faster</button><button type="button">The harmonic entropy diverges as ν̃ → 0, and such modes behave more like hindered or free rotations</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["They contribute the most entropy; the problem is that the harmonic formula overestimates it.","Cost is negligible either way; this is about accuracy.","Correct. The interpolation caps the entropy smoothly at the free-rotor value and reduces sensitivity to noisy small frequencies.","The harmonic S grows without bound as the frequency goes to zero, and low computed frequencies are also the noisiest. Interpolating toward free-rotor behaviour gives a bounded, more physical value."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="irc.html">← 2.5 Intrinsic reaction coordinate</a>
+    <a href="tst-kinetics.html">2.7 Transition state theory →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const h = 6.62607015e-34, kB = 1.380649e-23, c = 2.99792458e10, NA = 6.02214076e23, R = 8.314462618, amu = 1.66053906660e-27, KCAL = 4184;
+  const W = { m: 18.0106, A: 27.88, B: 14.51, C: 9.28, sig: 2, nus: [1595, 3657, 3756] };
+  function thermo(T) {
+    const m = W.m * amu, p = 1e5;
+    const qt = Math.pow(2 * Math.PI * m * kB * T / (h * h), 1.5) * kB * T / p;
+    const St = R * (Math.log(qt) + 2.5);
+    const qr = Math.sqrt(Math.PI) / W.sig * Math.pow(kB * T / (h * c), 1.5) / Math.sqrt(W.A * W.B * W.C);
+    const Sr = R * (Math.log(qr) + 1.5);
+    let Sv = 0, Ev = 0, zpe = 0;
+    W.nus.forEach((nu) => { const x = h * c * nu / (kB * T); Sv += R * (x / Math.expm1(x) - Math.log(-Math.expm1(-x))); Ev += R * T * x / Math.expm1(x); zpe += 0.5 * h * c * nu * NA; });
+    const Et = 1.5 * R * T, Er = 1.5 * R * T;
+    const H = zpe + Et + Er + Ev + R * T, S = St + Sr + Sv;
+    return { St, Sr, Sv, S, zpe, Et, Er, Ev, H, G: H - T * S };
+  }
+  let T = 298.15;
+  const p1 = new HN.Plot(document.getElementById("c1"), {
+    xr: [100, 1500], yr: [0, 260], aspect: 0.52, xlabel: "T / K", ylabel: "S / J·mol⁻¹K⁻¹", xticks: 200, yticks: 50,
+    draw(p) {
+      p.curve((t) => thermo(t).St, HN.css("--accent"), 2);
+      p.curve((t) => thermo(t).Sr, HN.css("--ok"), 2);
+      p.curve((t) => thermo(t).Sv, HN.css("--mark"), 2);
+      p.curve((t) => thermo(t).S, HN.css("--ink"), 2.6);
+      p.seg(T, 0, T, 260, HN.css("--ink-3"), 1.2, [4, 4]);
+      p.dot(T, thermo(T).S, HN.css("--ink"), 4.5);
+    },
+  });
+  const tab = document.getElementById("tab");
+  const kc = (j) => HN.fmt(j / KCAL, 2);
+  function u1() {
+    const t = thermo(T);
+    tab.innerHTML = "<thead><tr><th>Contribution</th><th>Energy / kcal·mol⁻¹</th><th>S / J·mol⁻¹K⁻¹</th></tr></thead><tbody>" +
+      "<tr><td>zero-point energy</td><td>" + kc(t.zpe) + "</td><td>—</td></tr>" +
+      "<tr><td>translation</td><td>" + kc(t.Et) + "</td><td>" + HN.fmt(t.St, 1) + "</td></tr>" +
+      "<tr><td>rotation</td><td>" + kc(t.Er) + "</td><td>" + HN.fmt(t.Sr, 1) + "</td></tr>" +
+      "<tr><td>vibration (thermal)</td><td>" + kc(t.Ev) + "</td><td>" + HN.fmt(t.Sv, 2) + "</td></tr>" +
+      "<tr><td>pV = RT</td><td>" + kc(R * T) + "</td><td>—</td></tr>" +
+      '<tr class="hl"><td>H − E (enthalpy correction)</td><td>' + kc(t.H) + "</td><td>" + HN.fmt(t.S, 1) + "</td></tr>" +
+      '<tr class="hl"><td>G − E (Gibbs correction)</td><td>' + kc(t.G) + "</td><td>−TS = " + kc(-T * t.S) + " kcal/mol</td></tr></tbody>";
+    p1.render();
+  }
+  HN.range("T", (v) => { T = v; u1(); }, (v) => HN.fmt(v, Math.abs(v - Math.round(v)) > 0.01 ? 2 : 0) + " K");
+  document.getElementById("T").dispatchEvent(new Event("input"));
+
+  /* ---------- one soft mode: harmonic vs quasi-RRHO ---------- */
+  const Sho = (nu, T) => { const x = h * c * nu / (kB * T); return R * (x / Math.expm1(x) - Math.log(-Math.expm1(-x))); };
+  const Sfr = (nu, T) => { const Bav = 1e-44, mu = h / (8 * Math.PI ** 2 * c * nu), mup = mu * Bav / (mu + Bav); return R * (0.5 + Math.log(Math.sqrt(8 * Math.PI ** 3 * mup * kB * T / (h * h)))); };
+  const Sq = (nu, T) => { const w = 1 / (1 + Math.pow(100 / nu, 4)); return w * Sho(nu, T) + (1 - w) * Sfr(nu, T); };
+  let lnu = 1.3, T2 = 300;
+  const p2 = new HN.Plot(document.getElementById("c2"), {
+    xr: [0.6, 2.7], yr: [0, 45], aspect: 0.5, xlabel: "log₁₀(ν̃ / cm⁻¹)", ylabel: "S / J·mol⁻¹K⁻¹", xticks: 0.5, yticks: 10,
+    draw(p) {
+      p.curve((l) => Sfr(Math.pow(10, l), T2), HN.css("--ink-3"), 1.4, [4, 4]);
+      p.curve((l) => Sho(Math.pow(10, l), T2), HN.css("--mark"), 2.2);
+      p.curve((l) => Sq(Math.pow(10, l), T2), HN.css("--accent"), 2.4);
+      p.seg(lnu, 0, lnu, 45, HN.css("--ink-3"), 1.2, [4, 4]);
+      p.dot(lnu, Sho(Math.pow(10, lnu), T2), HN.css("--mark"), 4.5);
+      p.dot(lnu, Sq(Math.pow(10, lnu), T2), HN.css("--accent"), 4.5);
+    },
+  });
+  const o2 = document.getElementById("o2");
+  function u2() {
+    const nu = Math.pow(10, lnu), a = Sho(nu, T2), b = Sq(nu, T2);
+    o2.innerHTML = '<div><span class="label">Harmonic</span><div class="val">' + HN.fmt(a, 2) + ' J/(mol·K)</div><div class="hint">−TS = ' + HN.fmt(-T2 * a / KCAL, 2) + ' kcal/mol</div></div>' +
+      '<div><span class="label">Quasi-RRHO</span><div class="val">' + HN.fmt(b, 2) + ' J/(mol·K)</div><div class="hint">−TS = ' + HN.fmt(-T2 * b / KCAL, 2) + ' kcal/mol</div></div>' +
+      '<div><span class="label">Difference in G</span><div class="val">' + HN.fmt(T2 * (a - b) / KCAL, 2) + ' kcal/mol</div><div class="hint">from this one mode</div></div>';
+    p2.render();
+  }
+  HN.range("nu", (v) => { lnu = v; u2(); }, (v) => HN.fmt(Math.pow(10, v), 0) + " cm⁻¹");
+  HN.range("T2", (v) => { T2 = v; u2(); }, (v) => HN.fmt(v, 0) + " K");
+  ["nu", "T2"].forEach((id) => document.getElementById(id).dispatchEvent(new Event("input")));
+})();
+</script>
+</body>
+</html>

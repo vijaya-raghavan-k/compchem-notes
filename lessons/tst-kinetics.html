@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transition State Theory and Kinetics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Moving on the potential energy surface</a> · 2.7</div>
+    <h1>Transition state theory and kinetics</h1>
+    <p class="goal">Goal: convert a computed free-energy barrier into a rate constant with the Eyring equation, relate it to Arrhenius parameters, and understand how errors, temperature and tunneling affect the comparison with experiment.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>From a barrier to a rate</h2>
+    <p>Transition state theory says the rate of a unimolecular step is an attempt frequency, \(k_BT/h\), times the fraction of molecules that have reached the transition state, \(e^{-\Delta G^\ddagger/RT}\). Splitting \(\Delta G^\ddagger = \Delta H^\ddagger - T\Delta S^\ddagger\) shows where the two Arrhenius parameters come from. Change them and watch the rate and the Arrhenius plot respond.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Eyring equation and Arrhenius plot</b><span class="hint">Change the activation parameters</span></div>
+      <div class="panel-body">
+        <canvas id="c1" class="plot" role="img" aria-label="Arrhenius plot of the natural log of the rate constant against 1000 over T, with a marker at the chosen temperature. With tunneling switched on, the line curves upward at low temperature."></canvas>
+        <div class="legend"><span><i class="bg-accent"></i>Eyring (no tunneling)</span><span><i class="bg-mark"></i>with Wigner tunneling</span></div>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="dh">ΔH‡</label><output id="dh-v"></output></div><input id="dh" type="range" min="5" max="60" step="0.5" value="40"></div>
+          <div class="range"><div class="top"><label for="ds">ΔS‡</label><output id="ds-v"></output></div><input id="ds" type="range" min="-20" max="20" step="0.5" value="-5"></div>
+          <div class="range"><div class="top"><label for="T">temperature</label><output id="T-v"></output></div><input id="T" type="range" min="250" max="900" step="5" value="600"></div>
+          <div class="range"><div class="top"><label for="nu">imaginary frequency</label><output id="nu-v"></output></div><input id="nu" type="range" min="0" max="2500" step="50" value="1500"></div>
+        </div>
+        <div class="readout" id="o1"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Three things to notice. Each extra kcal/mol of barrier costs a constant factor in rate at fixed temperature, and that factor is much smaller at 600 K than at 300 K. A negative \(\Delta S^\ddagger\), typical of ordered cyclic transition states, lowers the pre-exponential factor without changing the slope. And tunneling bends the Arrhenius plot upward at low temperature, where the Wigner factor grows; at high temperature the line is straight again.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Rate constants by hand</h2>
+    <ol class="work">
+      <li><div><b>The Eyring equation</b> for a unimolecular step:
+        \[ k = \kappa\,\frac{k_BT}{h}\,e^{-\Delta G^\ddagger/RT} \]
+        At 298.15 K, \(k_BT/h = 6.21\times10^{12}\) s⁻¹ and \(RT = 0.5925\) kcal/mol. The transmission coefficient \(\kappa\) is 1 unless tunneling or recrossing is included.</div></li>
+      <li><div>For \(\Delta G^\ddagger = 20\) kcal/mol at 298 K: \(20/0.5925 = 33.76\), \(e^{-33.76} = 2.19\times10^{-15}\), so
+        \[ k = 6.21\times10^{12}\times 2.19\times10^{-15} = 0.0136\ \text{s}^{-1}, \qquad t_{1/2} = \frac{\ln 2}{k} = 51\ \text{s} \]</div></li>
+      <li><div><b>Rule of thumb.</b> One factor of 10 in rate corresponds to \(RT\ln 10\): 1.36 kcal/mol at 298 K, but 2.75 kcal/mol at 600 K. A 1 kcal/mol error in the barrier changes \(k\) by a factor of 5.4 at 298 K and only 2.3 at 600 K.</div></li>
+      <li><div><b>Arrhenius parameters.</b> Comparing \(k = A\,e^{-E_a/RT}\) with Eyring, using \(E_a = RT^2\,d\ln k/dT\), gives for a unimolecular gas-phase step
+        \[ E_a = \Delta H^\ddagger + RT, \qquad A = \frac{e\,k_BT}{h}\,e^{\Delta S^\ddagger/R} \]
+        At 600 K with \(\Delta H^\ddagger = 40\) kcal/mol and \(\Delta S^\ddagger = -5\) cal/(mol·K): \(E_a = 41.2\) kcal/mol and \(A = 3.40\times10^{13}\times e^{-2.52} = 2.7\times10^{12}\) s⁻¹.</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> \(\Delta H^\ddagger\) sets the slope of the Arrhenius plot; \(\Delta S^\ddagger\) sets its height. A computed electronic barrier \(\Delta E^\ddagger\) is neither \(E_a\) nor \(\Delta G^\ddagger\) until the thermal corrections of lesson 2.6 are added.</div>
+
+    <div class="panel try-block" data-solution="k = 6.21 × 10¹² × e^(−15/0.5925) = 6.21 × 10¹² × 1.01 × 10⁻¹¹ ≈ 63 s⁻¹. Eₐ = 30 + 1.987 × 10⁻³ × 600 = 31.19 kcal/mol. At 600 K a 1 kcal/mol error changes k by e^(1/1.192) = 2.31." data-hint="Not yet. Use k = (k_BT/h) e^(−ΔG‡/RT) with RT = 0.5925 kcal/mol at 298 K, and Eₐ = ΔH‡ + RT with RT = 1.192 kcal/mol at 600 K.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Three quick numbers</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">k for ΔG‡ = 15 kcal/mol, 298 K (s⁻¹)</label><input id="t1" data-ans="62.8" data-tol="2" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">Eₐ for ΔH‡ = 30 kcal/mol, 600 K</label><input id="t2" data-ans="31.19" data-tol="0.05" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">rate factor per 1 kcal/mol at 600 K</label><input id="t3" data-ans="2.31" data-tol="0.03" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Computing and comparing rates</h2>
+    <ol class="work">
+      <li><div><b>Free energies at the right temperature.</b> \(\Delta G^\ddagger = G(\text{TS}) - G(\text{reactant})\), both from frequency calculations at the same level, temperature and standard state (lesson 2.6).</div></li>
+      <li><div><b>The right reactant.</b> Use the lowest-energy reactant conformer (or a Boltzmann-weighted ensemble), not the conformer that happens to look like the TS. If several conformers interconvert quickly, the barrier is measured from the most stable one (Curtin–Hammett).</div></li>
+      <li><div><b>Bimolecular steps</b> have units of concentration⁻¹ time⁻¹, and the standard state (1 bar or 1 mol/L) enters the result through \(\Delta G^\ddagger\).</div></li>
+      <li><div><b>Tunneling.</b> The imaginary frequency from lesson 1.11 gives the simplest correction, Wigner's \(\kappa = 1 + \tfrac1{24}(hc|\tilde\nu^\ddagger|/k_BT)^2\). It is reasonable when \(\kappa\) is small (high temperature, modest frequency). Large values call for Eckart or small-curvature methods.</div></li>
+    </ol>
+
+    <div class="note" style="border-color:var(--ok);background:var(--ok-wash)"><b>Bridge to my own work: computed barriers and experimental activation energies.</b> Thermal analysis of polymers (TGA with Kissinger, Friedman or Ozawa–Flynn–Wall analysis) gives an <em>apparent</em> activation energy for mass loss. It describes the whole condensed-phase process, which may combine several elementary steps, diffusion of volatiles and changing chain ends. A computed value refers to one elementary step of a model molecule in the gas phase. Compare like with like: convert the computed barrier to \(E_a = \Delta H^\ddagger + RT\) at the experimental temperature, consider which elementary step limits the observed rate, and remember that at ~600 K a 1 kcal/mol error is only a factor of about 2 in rate. Agreement within a few kcal/mol is meaningful; exact agreement can be coincidental.</div>
+
+    <details class="deeper">
+      <summary>Going deeper: assumptions of transition state theory and beyond</summary>
+      <div>
+        <p><b>Derivation in one line.</b> Assume the transition-state species is in quasi-equilibrium with reactants and that every crossing of the dividing surface is reactive. Factoring the motion along the reaction coordinate out of the TS partition function gives \(k = \frac{k_BT}{h}\,\frac{Q^\ddagger}{Q_R}\,e^{-\Delta E_0/k_BT}\), where \(Q^\ddagger\) excludes the imaginary mode and \(\Delta E_0\) is the ZPE-corrected barrier. The Gibbs-energy form is the same equation in thermodynamic language.</p>
+        <p><b>Recrossing and variational TST.</b> Trajectories can cross the dividing surface and come back, so conventional TST is an upper bound. Variational TST places the dividing surface at the free-energy maximum along the IRC (lesson 2.5) at each temperature, which minimizes recrossing. It matters most for loose transition states, such as barrierless radical recombinations.</p>
+        <p><b>Pressure dependence.</b> TST assumes energy is redistributed fast. At low pressure, unimolecular reactions become limited by collisional activation (falloff). RRKM theory with a master equation treats this regime.</p>
+        <p><b>Networks of steps.</b> For a mechanism with several steps, the observed rate depends on which barrier is highest relative to the lowest preceding intermediate. The energetic span model formalizes this for catalytic cycles; for decomposition networks, microkinetic modeling solves all rate equations together.</p>
+        <p><b>Kissinger in TST language.</b> The Kissinger relation \(\ln(\beta/T_p^2) = \text{const} - E_a/RT_p\), with heating rate \(\beta\) and peak temperature \(T_p\), assumes a single Arrhenius process. Its slope gives an \(E_a\) comparable to \(\Delta H^\ddagger + RT\) only if one elementary step really dominates the measured mass loss.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">Your functional has an expected error of ±2 kcal/mol in barrier heights. How uncertain is the predicted rate constant at 600 K?</p>
+      <div class="options"><button type="button">About a factor of 30</button><button type="button">About a factor of 5</button><button type="button">About 2%</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["That is the uncertainty at 298 K (5.4² ≈ 29). Higher temperature makes rates less sensitive to the barrier.","Correct. e^(2/1.192) ≈ 5.4, so the rate is uncertain by about a factor of five either way.","Rates depend exponentially on the barrier; 2 kcal/mol is never a 2% effect.","Each kcal/mol changes k by e^(1/RT). At 600 K, RT = 1.19 kcal/mol, so 2 kcal/mol gives e^(1.68) ≈ 5.4."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">A reaction proceeds through a rigid six-membered cyclic transition state. What sign do you expect for ΔS‡, and how does it affect A?</p>
+      <div class="options"><button type="button">Negative; it lowers A below e·k_BT/h</button><button type="button">Positive; it raises A</button><button type="button">Zero; entropy does not affect A</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Free internal rotations of the reactant become frozen in the ring-like TS, so ΔS‡ &lt; 0 and A = (e k_BT/h) e^(ΔS‡/R) drops.","Positive activation entropies are typical of loose TSs, such as simple bond fission, not of ordered cyclic ones.","A depends directly on e^(ΔS‡/R).","Forming a cyclic TS locks torsions that rotated freely in the reactant, which reduces entropy. Since A ∝ e^(ΔS‡/R), a negative ΔS‡ lowers the pre-exponential factor."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Which quantity should be compared with an experimental gas-phase Arrhenius activation energy for a unimolecular step?</p>
+      <div class="options"><button type="button">The electronic barrier ΔE‡</button><button type="button">ΔG‡</button><button type="button">ΔH‡ + RT at the experimental temperature</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["ΔE‡ lacks the zero-point and thermal corrections, which can shift barriers by a few kcal/mol.","ΔG‡ also contains −TΔS‡; the entropy shows up in A, not in Eₐ.","Correct. From Eₐ = RT² d ln k/dT applied to the Eyring equation, Eₐ = ΔH‡ + RT for a unimolecular gas-phase step.","Differentiating ln k from the Eyring equation with respect to T gives Eₐ = ΔH‡ + RT. Entropy enters the pre-exponential factor instead."]'></p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="label">End of part 2</span>
+    <h2>What you can now do</h2>
+    <p>Part 2 took the curvature machinery of part 1 and put it to work: optimizers that build quadratic models, convergence tests that bound forces but not always positions, coordinates that straighten curved valleys, saddle searches that climb along one eigenvector, IRCs that follow mass-weighted steepest descent, and the thermochemistry and transition state theory that turn the results into free energies and rates. Part 3 opens the black box that produced \(E(\mathbf R)\) in the first place.</p>
+  </section>
+
+  <nav class="pager">
+    <a href="thermochemistry.html">← 2.6 Thermochemistry</a>
+    <a href="../index.html">Contents →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const kB = 1.380649e-23, h = 6.62607015e-34, R = 1.987204e-3, Rcal = 1.987204;
+  let dH = 40, dS = -5, T = 600, nu = 1500;
+  const kappa = (t) => { const x = 1.43877 * nu / t; return 1 + x * x / 24; };
+  const k = (t, tun) => kB * t / h * Math.exp(dS / Rcal) * Math.exp(-dH / (R * t)) * (tun ? kappa(t) : 1);
+  const ln = Math.log;
+  const p = new HN.Plot(document.getElementById("c1"), {
+    xr: [1000 / 900, 1000 / 250], yr: [-40, 30], aspect: 0.55, xlabel: "1000 / T  (K⁻¹)", ylabel: "ln(k / s⁻¹)", xticks: 0.5, yticks: 10,
+    draw(pl) {
+      pl.curve((x) => ln(k(1000 / x, true)), HN.css("--mark"), 2, [6, 4]);
+      pl.curve((x) => ln(k(1000 / x, false)), HN.css("--accent"), 2.6);
+      pl.dot(1000 / T, ln(k(T, false)), HN.css("--ink"), 5);
+    },
+  });
+  const o1 = document.getElementById("o1");
+  const sci = (v) => { if (!isFinite(v) || v <= 0) return "—"; const e = Math.floor(Math.log10(v)), m = v / Math.pow(10, e); const sup = (n) => String(n).replace("-", "⁻").split("").map((ch) => ("0123456789".indexOf(ch) >= 0 ? "⁰¹²³⁴⁵⁶⁷⁸⁹"[+ch] : ch)).join(""); return (e >= -2 && e <= 3) ? HN.fmt(v, v < 1 ? 4 : 2) : HN.fmt(m, 2) + " × 10" + sup(e); };
+  const human = (s) => { const u = [["years", 3.156e7], ["days", 86400], ["hours", 3600], ["minutes", 60], ["seconds", 1], ["ms", 1e-3], ["µs", 1e-6], ["ns", 1e-9]]; for (const [n, f] of u) if (s >= f) return HN.fmt(s / f, 2) + " " + n; return sci(s) + " s"; };
+  function upd() {
+    const RT = R * T, dG = dH - T * dS / 1000, kk = k(T, false), kt = k(T, true);
+    const pr = [ln(k(250, true)), ln(k(900, true)), ln(k(250, false)), ln(k(900, false))];
+    p.setRange(null, [Math.floor(Math.min(...pr) - 2), Math.ceil(Math.max(...pr) + 2)]);
+    o1.innerHTML =
+      '<div><span class="label">ΔG‡ at ' + HN.fmt(T, 0) + ' K</span><div class="val">' + HN.fmt(dG, 2) + ' kcal/mol</div><div class="hint">ΔH‡ − TΔS‡</div></div>' +
+      '<div><span class="label">Rate constant</span><div class="val">' + sci(kk) + ' s⁻¹</div><div class="hint">half-life ' + human(Math.log(2) / kk) + '</div></div>' +
+      '<div><span class="label">Arrhenius parameters</span><div class="val">Eₐ = ' + HN.fmt(dH + RT, 2) + '</div><div class="hint">kcal/mol · A = ' + sci(Math.E * kB * T / h * Math.exp(dS / Rcal)) + ' s⁻¹</div></div>' +
+      '<div><span class="label">Sensitivity</span><div class="val">×' + HN.fmt(Math.exp(1 / RT), 2) + '</div><div class="hint">per kcal/mol of barrier error</div></div>' +
+      '<div><span class="label">Wigner κ</span><div class="val">' + HN.fmt(kappa(T), 2) + '</div><div class="hint">k with tunneling ' + sci(kt) + ' s⁻¹</div></div>';
+    p.render();
+  }
+  HN.range("dh", (v) => { dH = v; upd(); }, (v) => HN.fmt(v, 1) + " kcal/mol");
+  HN.range("ds", (v) => { dS = v; upd(); }, (v) => HN.fmt(v, 1) + " cal/(mol·K)");
+  HN.range("T", (v) => { T = v; upd(); }, (v) => HN.fmt(v, 0) + " K");
+  HN.range("nu", (v) => { nu = v; upd(); }, (v) => HN.fmt(v, 0) + "i cm⁻¹");
+  ["dh", "ds", "T", "nu"].forEach((id) => document.getElementById(id).dispatchEvent(new Event("input")));
+})();
+</script>
+</body>
+</html>

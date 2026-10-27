@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intrinsic Reaction Coordinate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Moving on the potential energy surface</a> · 2.5</div>
+    <h1>Intrinsic reaction coordinate</h1>
+    <p class="goal">Goal: understand the IRC as the steepest-descent path from a transition state in mass-weighted coordinates, see how masses and step sizes shape it, and use it correctly to confirm what a transition state connects.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>Sliding down from a saddle</h2>
+    <p>Start at a transition state, nudge the structure a tiny bit along the imaginary mode in both directions, and follow the steepest descent down each side. The path you trace is the intrinsic reaction coordinate. On the Müller–Brown surface below, give the two coordinates different "masses" and watch the path bend: in mass-weighted coordinates, light atoms move more readily than heavy ones.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>IRC on the Müller–Brown surface</b><span class="hint">Pick a saddle, change masses and step size</span></div>
+      <div class="panel-body">
+        <div class="seg" id="ts" role="group" aria-label="Transition state">
+          <button type="button" data-v="TS1" aria-pressed="true">From TS1</button>
+          <button type="button" data-v="TS2" aria-pressed="false">From TS2</button>
+        </div>
+        <canvas id="c1" class="plot" style="margin-top:12px" role="img" aria-label="Müller–Brown surface with the IRC from the chosen saddle drawn to the minima on both sides; an equal-mass path and a large-step path are drawn for comparison."></canvas>
+        <div class="legend"><span><i class="bg-ink"></i>IRC (accurate)</span><span><i class="bg-accent"></i>equal-mass path</span><span><i class="bg-mark"></i>simple steps of chosen size</span></div>
+        <div class="controls">
+          <div class="range"><div class="top"><label for="mx">mass of x</label><output id="mx-v"></output></div><input id="mx" type="range" min="1" max="16" step="0.5" value="1"></div>
+          <div class="range"><div class="top"><label for="my">mass of y</label><output id="my-v"></output></div><input id="my" type="range" min="1" max="16" step="0.5" value="6"></div>
+          <div class="range"><div class="top"><label for="h">simple step size</label><output id="h-v"></output></div><input id="h" type="range" min="0.01" max="0.12" step="0.005" value="0.06"></div>
+        </div>
+        <canvas id="c2" class="plot" style="margin-top:14px" role="img" aria-label="Energy along the IRC as a function of mass-weighted path length s, with the transition state at s = 0."></canvas>
+        <div class="readout" id="o1"></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">With equal masses the IRC is the ordinary steepest-descent path. Make \(y\) heavy and the IRC leaves the saddle along a direction dominated by \(x\), the light coordinate, before curving into the valley. Both versions connect the same two minima here, but the route between them, and the length \(s\), depend on the masses. The pink path shows what happens with crude, large steps: it overshoots across the valley walls instead of following the floor.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>Steepest descent in mass-weighted coordinates</h2>
+    <ol class="work">
+      <li><div>Use the mass-weighted coordinates of lesson 1.10, \(q_i = \sqrt{m_i}\,x_i\). Their gradient is \(\partial E/\partial q_i = g_i/\sqrt{m_i}\). The IRC is the steepest-descent path in these coordinates:
+        \[ \frac{d\mathbf q}{ds} = -\frac{\mathbf M^{-1/2}\mathbf g}{|\mathbf M^{-1/2}\mathbf g|} \]
+        where \(s\) is the arc length in mass-weighted units (amu\(^{1/2}\)·Bohr, or amu\(^{1/2}\)·Å).</div></li>
+      <li><div>Back in Cartesian coordinates, \(d\mathbf x = \mathbf M^{-1/2}d\mathbf q\), so the direction of motion is
+        \[ d\mathbf x \propto -\mathbf M^{-1}\mathbf g, \qquad dx_i \propto -\frac{g_i}{m_i} \]
+        Each coordinate moves in proportion to its force divided by its mass: exactly like a particle starting from rest, \(a = F/m\).</div></li>
+      <li><div>Example: masses \((1,\ 16)\) and gradient \(\mathbf g = (0.2,\ 0.2)\). Plain steepest descent goes along \((-0.2,\ -0.2)\), at 45°. The IRC goes along \((-0.2/1,\ -0.2/16) = (-0.2,\ -0.0125)\): almost entirely along the light coordinate.</div></li>
+      <li><div><b>Starting the path.</b> At the transition state \(\mathbf g = \mathbf 0\), so the formula gives no direction. The path leaves along the eigenvector of the mass-weighted Hessian with the negative eigenvalue: the imaginary mode of lesson 1.11, converted to Cartesians as \(\mathbf M^{-1/2}\mathbf v\).</div></li>
+    </ol>
+    <div class="note"><b>Key idea.</b> The IRC is the path a molecule would follow from the saddle if it moved infinitely slowly, always shedding its kinetic energy. Masses enter because they decide how forces turn into motion.</div>
+
+    <div class="panel try-block" data-solution="M⁻¹g = (0.4/2, 0.4/8) = (0.2, 0.05), so the IRC direction is along −(0.2, 0.05). The x coordinate, which is lighter, moves four times as far as y." data-hint="Not yet. Divide each gradient component by its own mass.">
+      <div class="panel-head"><b>Your turn</b><span class="hint">masses (2, 8), gradient (0.4, 0.4)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t1">(M⁻¹g)ₓ</label><input id="t1" data-ans="0.2" data-tol="0.005" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t2">(M⁻¹g)_y</label><input id="t2" data-ans="0.05" data-tol="0.005" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t3">ratio of x motion to y motion</label><input id="t3" data-ans="4" data-tol="0.05" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn check" type="button">Check</button><button class="btn show" type="button">Show solution</button></div>
+        <p class="feedback"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>Running and reading an IRC</h2>
+    <ul>
+      <li><b>Why run it.</b> A single imaginary frequency proves you found <em>a</em> first-order saddle, not that it is the saddle of <em>your</em> reaction. The IRC shows which minima it actually connects. Unexpected endpoints reveal hidden intermediates (like minimum C between A and B here) or a different reaction altogether.</li>
+      <li><b>Start from a good TS and Hessian.</b> The IRC needs an accurately converged saddle and its Hessian to choose the initial direction. Most programs read the Hessian from the preceding frequency calculation.</li>
+      <li><b>Step size and integrator.</b> Programs use predictor–corrector integrators (such as Gonzalez–Schlegel) that stay on the path with fairly large steps; the crude pink path above shows why a naive method cannot. Typical steps are around 0.1 amu\(^{1/2}\)·Bohr; smaller steps give smoother profiles near the saddle.</li>
+      <li><b>The endpoints are not minima.</b> IRCs usually stop when the energy flattens out, before full convergence. Optimize both endpoints, then compare them with your separately optimized reactant and product.</li>
+      <li><b>The energy profile.</b> Plotting \(E\) against \(s\), as in the lower figure, gives the reaction profile. Its shape shows whether the barrier is early or late, and its curvature near \(s = 0\) is related to the magnitude of the imaginary frequency.</li>
+    </ul>
+
+    <details class="deeper">
+      <summary>Going deeper: IRC versus MEP, bifurcations and dynamics</summary>
+      <div>
+        <p><b>Coordinate (in)dependence.</b> Fukui defined the IRC in mass-weighted Cartesian coordinates, where it is unique. Steepest descent in internal coordinates, or in unweighted Cartesians (the "minimum energy path" that NEB converges to), gives different curves away from the stationary points. All of them pass through the same minima and saddle, so energies of stationary points are unaffected; path lengths and shapes are not.</p>
+        <p><b>Reaction path curvature.</b> Where the IRC bends sharply, energy can flow from the reaction coordinate into perpendicular vibrations. The reaction path Hamiltonian of Miller, Handy and Adams uses the IRC, its curvature and the frequencies of perpendicular modes along it; it underlies variational transition state theory and small-curvature tunneling methods.</p>
+        <p><b>Bifurcations.</b> After a valley-ridge inflection point, the valley floor turns into a ridge and the path can split toward two products. An IRC is a single deterministic curve and will follow only one branch, so it can hide a second product. Product ratios in such cases need molecular dynamics.</p>
+        <p><b>Real molecules are not infinitely slow.</b> Molecules cross barriers with kinetic energy, and their trajectories can deviate considerably from the IRC, especially in flat regions after the saddle. The IRC defines the reaction mechanism geometrically; it does not describe the dynamics in time.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">Your TS has one imaginary frequency, but the IRC ends at a conformer you did not expect, not at the intended product. What does this mean?</p>
+      <div class="options"><button type="button">The saddle connects different minima than assumed; there may be an intermediate or a different mechanism</button><button type="button">The IRC failed and should be ignored</button><button type="button">The frequency calculation was wrong</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. The IRC tells you what the saddle actually connects. Optimize the endpoint and look for further steps from it.","An IRC that runs to a clean minimum is reliable; it is answering the question you asked.","One imaginary frequency is still correct for a saddle; the question is which saddle.","A first-order saddle always connects two minima; the IRC shows which. If one is unexpected, the reaction may go through an intermediate, or the saddle belongs to a different process."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">Why is the IRC defined in mass-weighted coordinates?</p>
+      <div class="options"><button type="button">To make the calculation cheaper</button><button type="button">Because Cartesian gradients are unreliable</button><button type="button">So that the path reflects how forces move atoms of different mass, and is uniquely defined</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Mass-weighting costs nothing extra but is not done for speed.","The gradient is the same; mass-weighting changes how it is turned into a direction.","Correct. dx ∝ −M⁻¹g mirrors a = F/m, and the definition in mass-weighted Cartesians is unique, unlike steepest descent in arbitrary coordinates.","Steepest descent depends on how distance is measured. Measuring it with √m makes the path follow how forces accelerate atoms of different masses and gives one unique, coordinate-independent definition."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">An IRC finishes, and the last point has a gradient of 0.003 Hartree/Å. What should you do with the endpoint?</p>
+      <div class="options"><button type="button">Use its energy directly as the product energy</button><button type="button">Optimize it fully, then compare with the separately optimized product</button><button type="button">Discard the IRC</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["The endpoint is not a minimum yet; its energy is too high and its geometry is not converged.","Correct. IRCs stop on flat ground before convergence; a final optimization identifies the minimum properly.","The IRC did its job: it showed which basin the path enters.","IRCs usually stop once energy changes become small, which is before a stationary point. A normal optimization from that endpoint gives the actual minimum."]'></p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a href="transition-state-search.html">← 2.4 Finding transition states</a>
+    <a href="thermochemistry.html">2.6 Thermochemistry →</a>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script src="../assets/lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  const MB = HN.MB, P = MB.pts, XR = [-1.5, 1.2], YR = [-0.45, 2.0];
+  let ts = "TS1", mx = 1, my = 6, hs = 0.06, res;
+  // direction of motion in Cartesian coordinates for steepest descent in mass-weighted coordinates
+  const dir = (p, m) => { const g = MB.G(p[0], p[1]), gq = [g[0] / Math.sqrt(m[0]), g[1] / Math.sqrt(m[1])], n = Math.hypot(gq[0], gq[1]); return n < 1e-12 ? null : [-gq[0] / n / Math.sqrt(m[0]), -gq[1] / n / Math.sqrt(m[1])]; };
+  function startDir(m) {
+    const [a, b, c] = MB.H(...P[ts]), e = HN.eig2(a / m[0], b / Math.sqrt(m[0] * m[1]), c / m[1]), v = e.v[0];
+    const d = [v[0] / Math.sqrt(m[0]), v[1] / Math.sqrt(m[1])], n = Math.hypot(v[0], v[1]);
+    return d.map((x) => x / n);
+  }
+  function irc(m, rk, h) {
+    const d0 = startDir(m), branches = [];
+    [1, -1].forEach((sg) => {
+      const qn = Math.hypot(d0[0] * Math.sqrt(m[0]), d0[1] * Math.sqrt(m[1]));
+      let p = [P[ts][0] + sg * d0[0] * 0.01 / qn, P[ts][1] + sg * d0[1] * 0.01 / qn], s = 0.01;
+      const pts = [[...P[ts], 0], [...p, sg * s]];
+      for (let i = 0; i < 4000; i++) {
+        let k1 = dir(p, m); if (!k1) break;
+        let np;
+        if (rk) {
+          const step = (pp, k, f) => [pp[0] + f * h * k[0], pp[1] + f * h * k[1]];
+          const k2 = dir(step(p, k1, 0.5), m) || k1, k3 = dir(step(p, k2, 0.5), m) || k2, k4 = dir(step(p, k3, 1), m) || k3;
+          np = [p[0] + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), p[1] + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])];
+        } else np = [p[0] + h * k1[0], p[1] + h * k1[1]];
+        const g = MB.G(np[0], np[1]);
+        if (MB.V(np[0], np[1]) > MB.V(p[0], p[1]) + 1e-9 && rk) break;
+        const moved = Math.hypot((np[0] - p[0]) * Math.sqrt(m[0]), (np[1] - p[1]) * Math.sqrt(m[1]));
+        if (rk && moved < 0.5 * h) break;
+        s += h; p = np; pts.push([p[0], p[1], sg * s]);
+        if (Math.hypot(g[0], g[1]) < 1) break;
+        if (p[0] < XR[0] - 0.5 || p[0] > XR[1] + 0.5 || p[1] < YR[0] - 0.5 || p[1] > YR[1] + 0.5) break;
+      }
+      branches.push(pts);
+    });
+    return branches;
+  }
+  function solve() {
+    const m = [mx, my];
+    res = { acc: irc(m, true, 0.004), eq: irc([1, 1], true, 0.004), crude: irc(m, false, hs).map((b) => b.slice(0, 60)) };
+  }
+  solve();
+  const fieldOpts = { transform: "sqrt", step: 0.75, min: -150, max: 80 };
+  const labels = (p) => {
+    const ink = HN.css("--ink"), mark = HN.css("--mark");
+    [["A", P.A], ["B", P.B], ["C", P.C]].forEach(([n, q]) => { p.dot(q[0], q[1], ink, 4.5, true); p.text(n, q[0], q[1], ink, { dx: 8, dy: -9, size: 11.5, weight: 600 }); });
+    [["TS1", P.TS1], ["TS2", P.TS2]].forEach(([n, q]) => { const g = p.ctx, X = p.X(q[0]), Y = p.Y(q[1]), r = 5 * p.dpr; g.strokeStyle = mark; g.lineWidth = 2 * p.dpr; g.beginPath(); g.moveTo(X - r, Y - r); g.lineTo(X + r, Y + r); g.moveTo(X + r, Y - r); g.lineTo(X - r, Y + r); g.stroke(); p.text(n, q[0], q[1], mark, { dx: 8, dy: -9, size: 11.5, weight: 600 }); });
+  };
+  const p1 = new HN.Plot(document.getElementById("c1"), {
+    xr: XR, yr: YR, aspect: 0.82, xlabel: "x", ylabel: "y", field: MB.V, fieldOpts,
+    draw(p) {
+      labels(p);
+      res.crude.forEach((b) => p.path(b, HN.css("--mark"), 1.6));
+      res.eq.forEach((b) => p.path(b, HN.css("--accent"), 2, [5, 4]));
+      res.acc.forEach((b) => p.path(b, HN.css("--ink"), 2.6));
+      const d = startDir([mx, my]), q = P[ts];
+      p.arrowDir(q[0], q[1], d[0], d[1], 34, HN.css("--mark"), 2.4); p.arrowDir(q[0], q[1], -d[0], -d[1], 34, HN.css("--mark"), 2.4);
+    },
+  });
+  const p2 = new HN.Plot(document.getElementById("c2"), {
+    xr: [-3, 3], yr: [-160, -20], aspect: 0.4, xlabel: "s / mass-weighted path length", ylabel: "E", yticks: 40, pad: { l: 44, r: 12, t: 10, b: 36 },
+    draw(p) {
+      const branch = (b) => b.map((q) => [q[2], MB.V(q[0], q[1])]);
+      res.eq.forEach((b) => p.path(branch(b), HN.css("--accent"), 1.8, [5, 4]));
+      res.acc.forEach((b) => p.path(branch(b), HN.css("--ink"), 2.4));
+      p.dot(0, MB.V(...P[ts]), HN.css("--mark"), 5);
+    },
+  });
+  const o1 = document.getElementById("o1");
+  const near = (q) => { let best = "?", d = 1e9; ["A", "B", "C"].forEach((n) => { const v = P[n], dd = Math.hypot(q[0] - v[0], q[1] - v[1]); if (dd < d) { d = dd; best = n; } }); return best; };
+  function upd() {
+    solve();
+    const ends = res.acc.map((b) => b[b.length - 1]), Ets = MB.V(...P[ts]);
+    const smax = Math.max(...res.acc.map((b) => Math.abs(b[b.length - 1][2])), ...res.eq.map((b) => Math.abs(b[b.length - 1][2])));
+    p2.setRange([-smax * 1.05, smax * 1.05], null);
+    o1.innerHTML = '<div><span class="label">Connects</span><div class="val">' + near(ends[0]) + " ⇄ " + near(ends[1]) + '</div></div>' +
+      '<div><span class="label">Barriers from each side</span><div class="val">' + ends.map((e) => HN.fmt(Ets - MB.V(e[0], e[1]), 1)).join(" and ") + '</div><div class="hint">model energy units</div></div>' +
+      '<div><span class="label">Path length s</span><div class="val">' + HN.fmt(Math.abs(ends[0][2]) + Math.abs(ends[1][2]), 2) + '</div><div class="hint">depends on the masses</div></div>';
+    p1.render(); p2.render();
+  }
+  HN.seg(document.getElementById("ts"), (v) => { ts = v; upd(); });
+  HN.range("mx", (v) => { mx = v; upd(); }, (v) => HN.fmt(v, 1));
+  HN.range("my", (v) => { my = v; upd(); }, (v) => HN.fmt(v, 1));
+  HN.range("h", (v) => { hs = v; upd(); }, (v) => HN.fmt(v, 3));
+  ["mx", "my", "h"].forEach((id) => document.getElementById(id).dispatchEvent(new Event("input")));
+})();
+</script>
+</body>
+</html>
