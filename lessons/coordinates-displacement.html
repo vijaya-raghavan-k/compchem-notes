@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coordinates and Displacement Vectors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/theme.js"></script>
+<script>
+  window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] }, svg: { fontCache: "global" } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  /* figure strokes and fills, all from theme tokens */
+  .g-grid { stroke: var(--rule); stroke-width: 1; }
+  .g-axis { stroke: var(--ink-3); stroke-width: 1.5; }
+  .g-tick { fill: var(--ink-3); font: 500 12px var(--f-mono); }
+  .g-pos  { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 5; fill: none; }
+  .g-pos2 { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; fill: none; opacity: .7; }
+  .g-disp { stroke: var(--mark); stroke-width: 3.5; fill: none; }
+  .g-leg  { stroke: var(--mark); stroke-width: 1.5; stroke-dasharray: 2 4; fill: none; }
+  .g-head { fill: var(--mark); }
+  .g-start { fill: var(--ink-3); }
+  .g-end   { fill: var(--accent); }
+  .g-ring  { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: .35; }
+  .g-label { fill: var(--ink); font: 500 13px var(--f-mono); }
+  .g-label.mark { fill: var(--mark); }
+  .g-label.muted { fill: var(--ink-3); }
+  .handle { cursor: grab; }
+  .handle:active { cursor: grabbing; }
+  /* water figure */
+  .w-bond { stroke: var(--ink-3); stroke-width: 6; stroke-linecap: round; }
+  .w-O { fill: var(--mark); }
+  .w-H { fill: var(--sheet); stroke: var(--ink-2); stroke-width: 2; }
+  .w-text { fill: var(--sheet); font: 600 15px var(--f-body); }
+  .w-textH { fill: var(--ink); font: 600 13px var(--f-body); }
+  .w-arrow { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+  .w-head { fill: var(--accent); }
+  .w-ghost { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+  table.dr { width: 100%; border-collapse: collapse; font: 400 var(--s--1)/1.4 var(--f-mono); font-variant-numeric: tabular-nums; margin-top: 14px; }
+  table.dr th { text-align: right; font-weight: 500; color: var(--ink-3); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+  table.dr th:first-child, table.dr td:first-child { text-align: left; }
+  table.dr td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+  .try { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 10px 14px; margin-top: 12px; }
+  .try input { width: 100%; font: 500 var(--s-0)/1 var(--f-mono); padding: 9px 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); color: var(--ink); }
+  .try input.right { border-color: var(--ok); background: var(--ok-wash); }
+  .try input.wrong { border-color: var(--mark); background: var(--mark-wash); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="../index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <header class="lesson-head">
+    <div class="crumb"><a href="../index.html">Mathematical foundations</a> · 1.1</div>
+    <h1>Coordinates and displacement vectors</h1>
+    <p class="goal">Goal: describe where an atom is, and describe how it moved, with one small column of numbers each.</p>
+  </header>
+
+  <!-- ====================== 1. SEE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 1 · See it</span>
+    <h2>An atom on a grid</h2>
+    <p>Imagine an atom in a two-dimensional coordinate system. Its position is</p>
+    <div class="math">\[ \mathbf r = \begin{pmatrix} 2 \\ 1 \end{pmatrix} \]</div>
+    <p>This means the atom is 2 units along the \(x\)-axis and 1 unit along the \(y\)-axis. Now suppose it moves to</p>
+    <div class="math">\[ \mathbf r' = \begin{pmatrix} 3 \\ 3 \end{pmatrix} \]</div>
+    <p>Its displacement is the final position minus the starting position:</p>
+    <div class="math">\[ \Delta\mathbf r = \mathbf r' - \mathbf r = \begin{pmatrix} 3-2 \\ 3-1 \end{pmatrix} = \begin{pmatrix} 1 \\ 2 \end{pmatrix} \]</div>
+    <p>The displacement vector tells us both which direction the atom moved and how far. Try moving the atom yourself.</p>
+
+    <div class="panel">
+      <div class="panel-head"><b>Atomic displacement</b><span class="hint">Drag the blue atom or tap the grid</span></div>
+      <div class="panel-body">
+        <div class="figure">
+          <svg id="grid" viewBox="0 0 480 330" role="img" aria-label="Grid with a grey starting atom at (2, 1) and a blue final atom that can be moved. A pink arrow shows the displacement between them, with dotted legs for its x and y components."></svg>
+        </div>
+        <div class="controls">
+          <div class="field">
+            <label for="fx">Final x</label>
+            <div class="stepper"><button type="button" data-t="fx" data-d="-0.5" aria-label="Decrease final x">−</button><input id="fx" type="number" step="0.5" min="0" max="6" value="3" inputmode="decimal"><button type="button" data-t="fx" data-d="0.5" aria-label="Increase final x">+</button></div>
+          </div>
+          <div class="field">
+            <label for="fy">Final y</label>
+            <div class="stepper"><button type="button" data-t="fy" data-d="-0.5" aria-label="Decrease final y">−</button><input id="fy" type="number" step="0.5" min="0" max="4" value="3" inputmode="decimal"><button type="button" data-t="fy" data-d="0.5" aria-label="Increase final y">+</button></div>
+          </div>
+        </div>
+        <div class="readout">
+          <div><span class="label">Displacement vector</span><div class="mjx" id="dr-out">Δr = (1, 2)</div></div>
+          <div><span class="label">Displacement magnitude</span><div class="val" id="mag-out">2.24 units</div><div class="hint" id="mag-how"></div></div>
+        </div>
+        <p class="hint" id="sentence" style="margin-top:12px"></p>
+        <div class="btn-row"><button class="btn" id="reset" type="button">Reset</button></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Notice three things while you move it. Each component of \(\Delta\mathbf r\) is just "how far along that axis". A negative component means the atom moved in the negative direction. And the arrow's length depends on both components together.</p>
+  </section>
+
+  <!-- ====================== 2. CALCULATE IT ====================== -->
+  <section class="step">
+    <span class="label">Step 2 · Calculate it</span>
+    <h2>A worked example by hand</h2>
+    <p>An atom moves from \(\mathbf r = (0.5,\ 1.5)\) to \(\mathbf r' = (2.5,\ 0.0)\). Find its displacement and how far it moved.</p>
+    <ol class="work">
+      <li><div>Write both positions as columns.
+        \[ \mathbf r = \begin{pmatrix} 0.5 \\ 1.5 \end{pmatrix}, \qquad \mathbf r' = \begin{pmatrix} 2.5 \\ 0.0 \end{pmatrix} \]</div></li>
+      <li><div>Subtract component by component: \(x\) from \(x\), \(y\) from \(y\).
+        \[ \Delta\mathbf r = \begin{pmatrix} 2.5 - 0.5 \\ 0.0 - 1.5 \end{pmatrix} = \begin{pmatrix} 2.0 \\ -1.5 \end{pmatrix} \]</div></li>
+      <li><div>Read the signs. \(+2.0\) means it moved 2.0 units in the \(+x\) direction; \(-1.5\) means it moved 1.5 units in the \(-y\) direction.</div></li>
+      <li><div>The two components are the legs of a right triangle, and the displacement is its hypotenuse. By Pythagoras,
+        \[ |\Delta\mathbf r| = \sqrt{(\Delta x)^2 + (\Delta y)^2} = \sqrt{2.0^2 + (-1.5)^2} = \sqrt{4.00 + 2.25} = \sqrt{6.25} = 2.5 \]</div></li>
+      <li><div>The atom moved 2.5 units. Squaring removes the sign, so a length is never negative.</div></li>
+    </ol>
+    <p>In three dimensions nothing new happens. A position has three components and one more term goes under the square root:</p>
+    <div class="math">\[ |\Delta\mathbf r| = \sqrt{(\Delta x)^2 + (\Delta y)^2 + (\Delta z)^2} \]</div>
+    <div class="note"><b>Position vs displacement.</b> A position depends on where you put the origin. A displacement does not: if you shift the origin, both \(\mathbf r\) and \(\mathbf r'\) shift by the same amount, and the difference stays the same. This is why chemistry programs care about displacements, not raw positions.</div>
+
+    <div class="panel">
+      <div class="panel-head"><b>Your turn</b><span class="hint">Atom moves from (2, 3) to (8, 11)</span></div>
+      <div class="panel-body">
+        <div class="try">
+          <div class="field"><label for="t-dx">Δx</label><input id="t-dx" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t-dy">Δy</label><input id="t-dy" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="t-m">|Δr|</label><input id="t-m" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div class="btn-row"><button class="btn" id="t-check" type="button">Check</button><button class="btn" id="t-show" type="button">Show solution</button></div>
+        <p class="feedback" id="t-fb"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. APPLY IT ====================== -->
+  <section class="step">
+    <span class="label">Step 3 · Apply it to chemistry</span>
+    <h2>From one atom to a whole molecule</h2>
+    <p>A real atom lives in three dimensions, so it needs three numbers. A molecule with \(N\) atoms needs \(3N\) numbers, and chemistry programs stack them into one long column. For a molecule with 10 atoms, a Cartesian displacement vector has 30 components:</p>
+    <div class="math">\[ \Delta\mathbf R = \begin{pmatrix} \Delta x_1 \\ \Delta y_1 \\ \Delta z_1 \\ \vdots \\ \Delta x_{10} \\ \Delta y_{10} \\ \Delta z_{10} \end{pmatrix} \]</div>
+    <p>This single vector describes how every atom moves at once. Two places where you meet it constantly:</p>
+    <ul>
+      <li><b>Geometry optimization.</b> Each optimization cycle proposes one \(\Delta\mathbf R\): a small move of all atoms toward lower energy. The "step size" printed in the output is a length of this vector.</li>
+      <li><b>Vibrational analysis.</b> A normal mode is a coordinated displacement pattern: a specific \(\Delta\mathbf R\) where all atoms move together in fixed proportions, with mass weighting taken into account.</li>
+    </ul>
+
+    <div class="panel">
+      <div class="panel-head"><b>Water: one vector, nine numbers</b><span class="hint">Patterns are schematic</span></div>
+      <div class="panel-body">
+        <div class="seg" role="group" aria-label="Choose a displacement pattern">
+          <button type="button" data-mode="opt" aria-pressed="true">Optimization step</button>
+          <button type="button" data-mode="sym" aria-pressed="false">Symmetric stretch</button>
+          <button type="button" data-mode="bend" aria-pressed="false">Bend</button>
+          <button type="button" data-mode="asym" aria-pressed="false">Antisymmetric stretch</button>
+        </div>
+        <div class="figure" style="margin-top:12px">
+          <svg id="water" viewBox="0 0 480 250" role="img" aria-label="A water molecule. Arrows on each atom show its displacement for the selected pattern, and the atoms move along those arrows."></svg>
+        </div>
+        <p class="hint" id="w-caption"></p>
+        <div style="overflow-x:auto">
+          <table class="dr" aria-label="Components of the displacement vector in ångström">
+            <thead><tr><th>Atom</th><th>Δx / Å</th><th>Δy / Å</th><th>Δz / Å</th></tr></thead>
+            <tbody id="w-table"></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:10px">Read row by row, these nine numbers are \(\Delta\mathbf R\) for water. \(\Delta z = 0\) because the molecule lies in the \(xy\)-plane. Arrows are drawn 4× longer than the real displacement.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px">In the stretches and the bend, the oxygen moves a little against the hydrogens. That keeps the centre of mass fixed, and it is the first hint of why masses will matter when we reach normal modes. The exact patterns come out of the mass-weighted Hessian, which is where this sequence of lessons is heading.</p>
+  </section>
+
+  <!-- ====================== 4. TEST IT ====================== -->
+  <section class="step">
+    <span class="label">Step 4 · Test understanding</span>
+    <h2>Before moving on</h2>
+
+    <div class="quiz" data-answer="1">
+      <p class="qtext">A vector is \(\mathbf v = \begin{pmatrix} 3 \\ 4 \end{pmatrix}\). What is its magnitude?</p>
+      <div class="options"><button type="button">7</button><button type="button">5</button><button type="button">12</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Adding the components gives 7, but the components are perpendicular, so they combine like the sides of a right triangle, not like distances along one line.","Correct. √(3² + 4²) = √(9 + 16) = √25 = 5.","12 is the product of the components. A length comes from squaring, adding and taking the square root.","That is fine. Treat 3 and 4 as the two legs of a right triangle: the magnitude is the hypotenuse, √(3² + 4²) = √25 = 5. Step 2 walks through this."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="2">
+      <p class="qtext">A molecule has 12 atoms. How many components does its Cartesian displacement vector have?</p>
+      <div class="options"><button type="button">12</button><button type="button">24</button><button type="button">36</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["That would be one number per atom. Each atom needs three: Δx, Δy and Δz.","That is two per atom, which is enough only for a flat 2D picture. Real molecules need three.","Correct. 3 components × 12 atoms = 36.","Each atom needs three numbers (Δx, Δy, Δz), so the vector has 3 × 12 = 36 components."]'></p>
+    </div>
+
+    <div class="quiz" data-answer="0">
+      <p class="qtext">You move the origin of the coordinate system 5 units to the right. What happens to the atom's position and to its displacement?</p>
+      <div class="options"><button type="button">Positions change; displacement stays the same</button><button type="button">Both change</button><button type="button">Neither changes</button><button type="button">I don't know yet</button></div>
+      <p class="feedback" data-fb='["Correct. Both positions lose 5 in x, so their difference is unchanged.","The positions do change, but both by the same amount, so subtracting them cancels the shift.","The atom has not moved, but its coordinates are measured from the origin, so the position numbers do change.","Write r = (2, 1) and r′ = (3, 3) relative to an origin 5 units to the right: (−3, 1) and (−2, 3). The difference is still (1, 2)."]'></p>
+    </div>
+  </section>
+
+  <section class="step">
+    <span class="label">Where this leads</span>
+    <h2>Why start this small</h2>
+    <p>The objective is not to rush toward eigenvectors. It is to reach a point where, when you see</p>
+    <div class="math">\[ \mathbf H\mathbf v = \lambda\mathbf v \]</div>
+    <p>you know what every symbol represents physically, mathematically and computationally. The \(\mathbf v\) in that equation is a displacement vector of exactly the kind on this page: a column of \(3N\) numbers describing how every atom moves.</p>
+  </section>
+
+  <nav class="pager">
+    <a href="../index.html">← Contents</a>
+    <span class="muted">Next: Vector length, addition and the dot product</span>
+  </nav>
+  <footer>The Hessian Notebook · personal study notes</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+  const mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const fmt = (v) => { const r = Math.round(v * 100) / 100; return (Object.is(r, -0) ? 0 : r).toString().replace("-", "−"); };
+  const tex = (v) => { const r = Math.round(v * 100) / 100; return (Object.is(r, -0) ? 0 : r).toString(); };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function typeset(el) {
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetClear([el]);
+      MathJax.typesetPromise([el]).catch(() => {});
+    }
+  }
+
+  /* ============ Step 1: displacement on a grid ============ */
+  const svg = document.getElementById("grid");
+  const U = 70, X0 = 40, Y0 = 16, XMAX = 6, YMAX = 4;
+  const px = (x) => X0 + x * U, py = (y) => Y0 + (YMAX - y) * U;
+  const START = { x: 2, y: 1 }, DEFAULT_END = { x: 3, y: 3 };
+  let end = { ...DEFAULT_END };
+
+  const defs = mk("defs", {}, svg);
+  const marker = mk("marker", { id: "head", viewBox: "0 0 10 10", refX: "8.5", refY: "5", markerWidth: "4.2", markerHeight: "4.2", orient: "auto-start-reverse" }, defs);
+  mk("path", { d: "M0,0 L10,5 L0,10 z", class: "g-head" }, marker);
+
+  for (let i = 0; i <= XMAX; i++) { mk("line", { x1: px(i), y1: py(0), x2: px(i), y2: py(YMAX), class: "g-grid" }, svg); mk("text", { x: px(i), y: py(0) + 20, class: "g-tick", "text-anchor": "middle" }, svg).textContent = i; }
+  for (let j = 0; j <= YMAX; j++) { mk("line", { x1: px(0), y1: py(j), x2: px(XMAX), y2: py(j), class: "g-grid" }, svg); if (j) mk("text", { x: px(0) - 12, y: py(j) + 4, class: "g-tick", "text-anchor": "end" }, svg).textContent = j; }
+  mk("line", { x1: px(0), y1: py(0), x2: px(XMAX), y2: py(0), class: "g-axis" }, svg);
+  mk("line", { x1: px(0), y1: py(0), x2: px(0), y2: py(YMAX), class: "g-axis" }, svg);
+  mk("text", { x: px(XMAX) - 4, y: py(0) - 8, class: "g-label muted", "text-anchor": "end" }, svg).textContent = "x";
+  mk("text", { x: px(0) + 8, y: py(YMAX) + 14, class: "g-label muted" }, svg).textContent = "y";
+
+  const posR  = mk("line", { class: "g-pos" }, svg);
+  const posR2 = mk("line", { class: "g-pos2" }, svg);
+  const legX  = mk("line", { class: "g-leg" }, svg);
+  const legY  = mk("line", { class: "g-leg" }, svg);
+  const disp  = mk("line", { class: "g-disp", "marker-end": "url(#head)" }, svg);
+  const lblDx = mk("text", { class: "g-label mark", "text-anchor": "middle" }, svg);
+  const lblDy = mk("text", { class: "g-label mark" }, svg);
+  mk("circle", { cx: px(START.x), cy: py(START.y), r: 9, class: "g-start" }, svg);
+  const lblStart = mk("text", { class: "g-label muted", "text-anchor": "middle" }, svg);
+  const handle = mk("g", { class: "handle", tabindex: "0", role: "slider", "aria-label": "Final atom position" }, svg);
+  const ring = mk("circle", { r: 20, class: "g-ring" }, handle);
+  const dot  = mk("circle", { r: 10, class: "g-end" }, handle);
+  const lblEnd = mk("text", { class: "g-label", "text-anchor": "middle" }, svg);
+
+  const fx = document.getElementById("fx"), fy = document.getElementById("fy");
+  const drOut = document.getElementById("dr-out"), magOut = document.getElementById("mag-out"), magHow = document.getElementById("mag-how");
+  const sentence = document.getElementById("sentence");
+  let lastKey = "";
+
+  function setEnd(x, y) {
+    end.x = Math.min(XMAX, Math.max(0, Math.round(x * 2) / 2));
+    end.y = Math.min(YMAX, Math.max(0, Math.round(y * 2) / 2));
+    render();
+  }
+
+  function render() {
+    const dx = end.x - START.x, dy = end.y - START.y, m = Math.hypot(dx, dy);
+    const sx = px(START.x), sy = py(START.y), ex = px(end.x), ey = py(end.y);
+    posR.setAttribute("x1", px(0)); posR.setAttribute("y1", py(0)); posR.setAttribute("x2", sx); posR.setAttribute("y2", sy);
+    posR2.setAttribute("x1", px(0)); posR2.setAttribute("y1", py(0)); posR2.setAttribute("x2", ex); posR2.setAttribute("y2", ey);
+    legX.setAttribute("x1", sx); legX.setAttribute("y1", sy); legX.setAttribute("x2", ex); legX.setAttribute("y2", sy);
+    legY.setAttribute("x1", ex); legY.setAttribute("y1", sy); legY.setAttribute("x2", ex); legY.setAttribute("y2", ey);
+    legX.style.display = dx ? "" : "none"; legY.style.display = dy ? "" : "none";
+    // shorten the arrow so its head stops at the atom's edge
+    if (m > 0) {
+      const L = Math.hypot(ex - sx, ey - sy), k = Math.max(0, (L - 12) / L), k0 = Math.min(1, 10 / L);
+      disp.setAttribute("x1", sx + (ex - sx) * k0); disp.setAttribute("y1", sy + (ey - sy) * k0);
+      disp.setAttribute("x2", sx + (ex - sx) * k);  disp.setAttribute("y2", sy + (ey - sy) * k);
+      disp.style.display = "";
+    } else disp.style.display = "none";
+    lblDx.setAttribute("x", (sx + ex) / 2); lblDx.setAttribute("y", sy + (dy > 0 ? 20 : -10)); lblDx.textContent = dx ? "Δx = " + fmt(dx) : "";
+    lblDy.setAttribute("x", ex + (dx >= 0 ? 10 : -10)); lblDy.setAttribute("y", (sy + ey) / 2 + 4); lblDy.setAttribute("text-anchor", dx >= 0 ? "start" : "end"); lblDy.textContent = dy ? "Δy = " + fmt(dy) : "";
+    lblStart.setAttribute("x", sx); lblStart.setAttribute("y", sy + (end.y < START.y ? -18 : 28)); lblStart.textContent = "r (2, 1)";
+    ring.setAttribute("cx", ex); ring.setAttribute("cy", ey); dot.setAttribute("cx", ex); dot.setAttribute("cy", ey);
+    const above = end.y >= YMAX - 0.25 ? 1 : -1;
+    lblEnd.setAttribute("x", Math.min(px(XMAX) - 30, Math.max(px(0) + 30, ex))); lblEnd.setAttribute("y", ey + (above > 0 ? 36 : -26));
+    lblEnd.textContent = "r′ (" + fmt(end.x) + ", " + fmt(end.y) + ")";
+    handle.setAttribute("aria-valuetext", "x " + end.x + ", y " + end.y);
+
+    fx.value = end.x; fy.value = end.y;
+    const key = dx + "," + dy;
+    if (key !== lastKey) {
+      lastKey = key;
+      drOut.innerHTML = "\\(\\Delta\\mathbf r = \\begin{pmatrix} " + tex(dx) + " \\\\ " + tex(dy) + " \\end{pmatrix}\\)";
+      typeset(drOut);
+    }
+    magOut.textContent = m.toFixed(2) + " units";
+    const s = dx * dx + dy * dy;
+    magHow.textContent = "√(" + fmt(dx) + "² + " + fmt(dy) + "²) = √" + fmt(s);
+    const part = (v, axis) => v === 0 ? "did not move along " + axis : "moved " + fmt(Math.abs(v)) + " unit" + (Math.abs(v) === 1 ? "" : "s") + " in the " + (v > 0 ? "+" : "−") + axis + " direction";
+    sentence.textContent = m === 0 ? "The atom is back where it started: the displacement is the zero vector." : "The atom " + part(dx, "x") + " and " + part(dy, "y") + ".";
+  }
+
+  function toGrid(evt) {
+    const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return { x: (p.x - X0) / U, y: YMAX - (p.y - Y0) / U };
+  }
+  let dragging = false;
+  svg.addEventListener("pointerdown", (e) => { dragging = true; svg.setPointerCapture(e.pointerId); const g = toGrid(e); setEnd(g.x, g.y); });
+  svg.addEventListener("pointermove", (e) => { if (!dragging) return; const g = toGrid(e); setEnd(g.x, g.y); });
+  const stop = () => { dragging = false; };
+  svg.addEventListener("pointerup", stop); svg.addEventListener("pointercancel", stop);
+  handle.addEventListener("keydown", (e) => {
+    const d = { ArrowLeft: [-0.5, 0], ArrowRight: [0.5, 0], ArrowUp: [0, 0.5], ArrowDown: [0, -0.5] }[e.key];
+    if (d) { e.preventDefault(); setEnd(end.x + d[0], end.y + d[1]); }
+  });
+  document.querySelectorAll(".stepper button").forEach((b) => b.addEventListener("click", () => {
+    const d = parseFloat(b.dataset.d);
+    if (b.dataset.t === "fx") setEnd(end.x + d, end.y); else setEnd(end.x, end.y + d);
+  }));
+  fx.addEventListener("change", () => setEnd(parseFloat(fx.value) || 0, end.y));
+  fy.addEventListener("change", () => setEnd(end.x, parseFloat(fy.value) || 0));
+  document.getElementById("reset").addEventListener("click", () => setEnd(DEFAULT_END.x, DEFAULT_END.y));
+  render();
+
+  /* ============ Step 2: your turn ============ */
+  const tIn = { dx: document.getElementById("t-dx"), dy: document.getElementById("t-dy"), m: document.getElementById("t-m") };
+  const tAns = { dx: 6, dy: 8, m: 10 };
+  const tFb = document.getElementById("t-fb");
+  document.getElementById("t-check").addEventListener("click", () => {
+    let ok = 0, filled = 0;
+    for (const k in tIn) {
+      const raw = tIn[k].value.trim().replace("−", "-").replace(",", ".");
+      tIn[k].classList.remove("right", "wrong");
+      if (!raw) continue;
+      filled++;
+      const good = Math.abs(parseFloat(raw) - tAns[k]) < 0.01;
+      tIn[k].classList.add(good ? "right" : "wrong"); if (good) ok++;
+    }
+    if (!filled) tFb.textContent = "Fill in at least one box first.";
+    else if (ok === 3) tFb.textContent = "All three correct. Δr = (6, 8), and √(36 + 64) = √100 = 10.";
+    else if (tIn.m.classList.contains("wrong") && !tIn.dx.classList.contains("wrong") && !tIn.dy.classList.contains("wrong")) tFb.textContent = "The components are right. For the length, square each one, add them, then take the square root.";
+    else tFb.textContent = "Not yet. Subtract the starting value from the final value for each axis: final minus start.";
+  });
+  document.getElementById("t-show").addEventListener("click", () => {
+    tIn.dx.value = 6; tIn.dy.value = 8; tIn.m.value = 10;
+    for (const k in tIn) { tIn[k].classList.remove("wrong"); tIn[k].classList.add("right"); }
+    tFb.textContent = "Δx = 8 − 2 = 6, Δy = 11 − 3 = 8, and |Δr| = √(6² + 8²) = √(36 + 64) = √100 = 10.";
+  });
+
+  /* ============ Step 3: water displacement patterns ============ */
+  const W = document.getElementById("water");
+  const S = 150, CX = 240, CY = 82;                      // 1 Å = 150 px
+  const toW = (x, y) => [CX + x * S, CY - y * S];
+  const atoms = [ { n: "O", x: 0, y: 0 }, { n: "H₁", x: -0.757, y: -0.586 }, { n: "H₂", x: 0.757, y: -0.586 } ];
+  const MODES = {
+    opt:  { d: [[0.000, -0.012], [0.035, 0.018], [-0.048, 0.006]], cap: "One optimization step: each atom moves a different, unrelated amount toward a lower-energy geometry.", loop: "once" },
+    sym:  { d: [[0.000, 0.008], [-0.079, -0.061], [0.079, -0.061]], cap: "Symmetric stretch: both O–H bonds lengthen and shorten together.", loop: "osc" },
+    bend: { d: [[0.000, 0.010], [0.061, -0.079], [-0.061, -0.079]], cap: "Bend: the H–O–H angle opens and closes while bond lengths stay nearly fixed.", loop: "osc" },
+    asym: { d: [[0.010, 0.000], [-0.079, -0.061], [-0.079, 0.061]], cap: "Antisymmetric stretch: one O–H bond lengthens while the other shortens.", loop: "osc" },
+  };
+  let mode = "opt";
+
+  const wdefs = mk("defs", {}, W);
+  const wm = mk("marker", { id: "whead", viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "4.5", markerHeight: "4.5", orient: "auto" }, wdefs);
+  mk("path", { d: "M0,0 L10,5 L0,10 z", class: "w-head" }, wm);
+  const ghosts = atoms.map((a) => { const [x, y] = toW(a.x, a.y); return mk("circle", { cx: x, cy: y, r: a.n === "O" ? 26 : 17, class: "w-ghost" }, W); });
+  const bonds = [mk("line", { class: "w-bond" }, W), mk("line", { class: "w-bond" }, W)];
+  const arrows = atoms.map(() => mk("line", { class: "w-arrow", "marker-end": "url(#whead)" }, W));
+  const nodes = atoms.map((a) => {
+    const g = mk("g", {}, W);
+    mk("circle", { r: a.n === "O" ? 26 : 17, class: a.n === "O" ? "w-O" : "w-H" }, g);
+    mk("text", { class: a.n === "O" ? "w-text" : "w-textH", "text-anchor": "middle", y: 5 }, g).textContent = a.n;
+    return g;
+  });
+  const table = document.getElementById("w-table"), cap = document.getElementById("w-caption");
+
+  function setMode(m) {
+    mode = m; t0 = performance.now();
+    document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    const d = MODES[m].d;
+    cap.textContent = MODES[m].cap;
+    const f = (v) => (v >= 0 ? " " : "−") + Math.abs(v).toFixed(3);
+    table.innerHTML = atoms.map((a, i) => "<tr><td>" + a.n + "</td><td>" + f(d[i][0]) + "</td><td>" + f(d[i][1]) + "</td><td> 0.000</td></tr>").join("");
+    atoms.forEach((a, i) => {
+      const [x, y] = toW(a.x, a.y), L = 4 * S;
+      const vx = d[i][0] * L, vy = -d[i][1] * L, len = Math.hypot(vx, vy), r = a.n === "O" ? 28 : 19;
+      if (len < 6) { arrows[i].style.display = "none"; return; }
+      arrows[i].style.display = "";
+      const ux = vx / len, uy = vy / len;
+      arrows[i].setAttribute("x1", x + ux * r); arrows[i].setAttribute("y1", y + uy * r);
+      arrows[i].setAttribute("x2", x + ux * (r + Math.max(len, 18))); arrows[i].setAttribute("y2", y + uy * (r + Math.max(len, 18)));
+    });
+    draw(0);
+  }
+
+  function draw(s) {   // s: fraction of the displacement applied (amplified 2× for visibility)
+    const d = MODES[mode].d, pos = atoms.map((a, i) => toW(a.x + 2 * s * d[i][0], a.y + 2 * s * d[i][1]));
+    nodes.forEach((g, i) => g.setAttribute("transform", "translate(" + pos[i][0].toFixed(2) + "," + pos[i][1].toFixed(2) + ")"));
+    [1, 2].forEach((h, k) => { bonds[k].setAttribute("x1", pos[0][0]); bonds[k].setAttribute("y1", pos[0][1]); bonds[k].setAttribute("x2", pos[h][0]); bonds[k].setAttribute("y2", pos[h][1]); });
+    ghosts.forEach((c) => c.style.display = s ? "" : "none");
+  }
+
+  let t0 = performance.now();
+  function tick(now) {
+    const t = (now - t0) / 1000;
+    if (MODES[mode].loop === "osc") draw(Math.sin(t * 2 * Math.PI / 1.6));
+    else { const c = t % 2.6; draw(c < 1.6 ? 0.5 - 0.5 * Math.cos(Math.PI * c / 1.6) : 1); }
+    requestAnimationFrame(tick);
+  }
+  document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+  setMode("opt");
+  if (!reduce) requestAnimationFrame(tick);
+
+  /* ============ Step 4: quiz ============ */
+  document.querySelectorAll(".quiz").forEach((q) => {
+    const answer = +q.dataset.answer, fbEl = q.querySelector(".feedback"), fb = JSON.parse(fbEl.dataset.fb);
+    const opts = q.querySelectorAll(".options button");
+    opts.forEach((b, i) => b.addEventListener("click", () => {
+      opts.forEach((o) => o.classList.remove("right", "wrong"));
+      if (i === answer) b.classList.add("right");
+      else if (i !== opts.length - 1) b.classList.add("wrong");
+      fbEl.textContent = fb[i];
+    }));
+  });
+})();
+</script>
+</body>
+</html>
