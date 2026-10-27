@@ -346,3 +346,15 @@
     });
   });
 })();
+
+/* ---------- Müller–Brown model surface (used in lessons 2.4 and 2.5) ---------- */
+(function () {
+  const A = [-200, -100, -170, 15], a = [-1, -1, -6.5, 0.7], b = [0, 0, 11, 0.6], c = [-10, -10, -6.5, 0.7], x0 = [1, 0, -0.5, -1], y0 = [0, 0.5, 1.5, 1];
+  const MB = {
+    V(x, y) { let s = 0; for (let k = 0; k < 4; k++) { const dx = x - x0[k], dy = y - y0[k]; s += A[k] * Math.exp(a[k] * dx * dx + b[k] * dx * dy + c[k] * dy * dy); } return s; },
+    G(x, y) { let gx = 0, gy = 0; for (let k = 0; k < 4; k++) { const dx = x - x0[k], dy = y - y0[k], f = A[k] * Math.exp(a[k] * dx * dx + b[k] * dx * dy + c[k] * dy * dy); gx += f * (2 * a[k] * dx + b[k] * dy); gy += f * (b[k] * dx + 2 * c[k] * dy); } return [gx, gy]; },
+    H(x, y) { let hxx = 0, hxy = 0, hyy = 0; for (let k = 0; k < 4; k++) { const dx = x - x0[k], dy = y - y0[k], f = A[k] * Math.exp(a[k] * dx * dx + b[k] * dx * dy + c[k] * dy * dy), qx = 2 * a[k] * dx + b[k] * dy, qy = b[k] * dx + 2 * c[k] * dy; hxx += f * (qx * qx + 2 * a[k]); hxy += f * (qx * qy + b[k]); hyy += f * (qy * qy + 2 * c[k]); } return [hxx, hxy, hyy]; },
+    pts: { A: [-0.5582, 1.4417], B: [0.6235, 0.0280], C: [-0.0500, 0.4667], TS1: [-0.8220, 0.6243], TS2: [0.2125, 0.2930] },
+  };
+  window.HN.MB = MB;
+})();
