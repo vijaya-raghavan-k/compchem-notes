@@ -10,8 +10,9 @@ assets/contents.js                    list of parts and topics: edit this to add
 assets/style.css                      shared styles
 assets/theme.js                       light/dark toggle
 assets/home.js                        renders the contents page
+assets/lesson.js                      shared lesson tools: plots, contour maps, quizzes, exercises
 lessons/_template.html                starting point for a new lesson
-lessons/coordinates-displacement.html lesson 1.1
+lessons/*.html                        lessons 1.1–1.11 (mathematical foundations)
 ```
 
 ## Publish on GitHub Pages (once)
