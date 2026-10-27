@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Hessian Notebook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Interactive notes on the mathematics and methods of computational chemistry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/theme.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">The Hessian Notebook</a>
+    <button class="theme-btn" id="theme-btn" type="button">Dark</button>
+  </header>
+
+  <section class="intro">
+    <h1>Computational chemistry, from coordinates upward</h1>
+    <p>Interactive notes on the ideas behind geometry optimization, frequencies, transition states, DFT, molecular dynamics and machine learning. Each topic starts from a picture you can move and ends with the calculation it explains.</p>
+
+    <div class="method" aria-label="How each lesson is organized">
+      <div><span class="label">Step 1</span><b>See it</b><span>An interactive figure, no heavy math.</span></div>
+      <div><span class="label">Step 2</span><b>Calculate it</b><span>A small numerical example, by hand.</span></div>
+      <div><span class="label">Step 3</span><b>Apply it</b><span>Where it appears in real calculations.</span></div>
+      <div><span class="label">Step 4</span><b>Test it</b><span>Short questions before moving on.</span></div>
+    </div>
+  </section>
+
+  <div id="contents"></div>
+
+  <footer>Personal study notes by Vijay. Topics are added as they are written.</footer>
+</div>
+<script src="assets/contents.js"></script>
+<script src="assets/home.js"></script>
+</body>
+</html>
